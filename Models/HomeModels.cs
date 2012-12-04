@@ -13,12 +13,17 @@ namespace Turgunda2.Models
     public class Inverse : Relation { public string prop; public string about; public string name; }
     public class Common
     {
-        public static KeyValuePair<string, string>[] Types = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("http://fogid.net/o/archive", "архив"),
-            new KeyValuePair<string, string>("http://fogid.net/o/person", "персона"),
-            new KeyValuePair<string, string>("http://fogid.net/o/org-sys", "орг. система"),
-            new KeyValuePair<string, string>("http://fogid.net/o/collection", "коллекция"),
+        public static string[][] OntPairs = new string[][] {
+            new string[] {"http://fogid.net/o/archive", "архив"},
+            new string[] {"http://fogid.net/o/person", "персона"},
+            new string[] {"http://fogid.net/o/org-sys", "орг. система"},
+            new string[] {"http://fogid.net/o/collection", "коллекция"},
+            new string[] {"http://fogid.net/o/name", "имя"},
+            new string[] {"http://fogid.net/o/from-date", "нач.дата"},
+            new string[] {"http://fogid.net/o/to-date", "кон.дата"},
         };
+        public static Dictionary<string, string> OntNames = new Dictionary<string, string>(
+            OntPairs.ToDictionary(pa => pa[0], pa => pa[1]));
         public static string GetNameFromRecord(sema2012m.EntityInfo record)
         {
             return record.RecordElements
@@ -30,7 +35,7 @@ namespace Turgunda2.Models
         public static XElement format_p = new XElement("record",
                 new XAttribute("type", ONames.t_person),
                 new XElement("field", new XAttribute("prop", ONames.p_name)),
-                new XElement("field", new XAttribute("prop", ONames.p_fromdate)),
+                new XElement("field", new XAttribute("prop", ONames.p_fromdate), new XElement("label", "рожд.")),
                 new XElement("inverse", new XAttribute("prop", ONames.p_reflected),
                     new XElement("record", new XAttribute("type", ONames.FOG + "reflection"),
                         new XElement("direct", new XAttribute("prop", ONames.p_indoc),
@@ -62,13 +67,36 @@ namespace Turgunda2.Models
             this.id = record.LastId;
             string type_id = record.TypeId;
             this.type_id = type_id;
-            this.type = Common.Types.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
+            this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.type == null) this.type = type_id;
             this.name = Common.GetNameFromRecord(record);
             XElement format = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
             if (type_id == ONames.t_person) format = Common.format_p;
             XElement xres = sema2012m.DbEntry.GetItemByIdFormatted(id, format);
-            this.xresult = new XElement("a", new XAttribute("href", ""), "Hello!");
+            //var query = format;
+            XElement table = new XElement("table",
+                new XElement("thead",
+                    new XElement("tr",
+                        format.Elements().Where(el => el.Name == "field")
+                        .Select(el => {
+                            string prop = el.Attribute("prop").Value;
+                            XElement label = el.Element("label");
+                            string columnname = label != null ? label.Value : 
+                                (Common.OntNames.ContainsKey(prop)?Common.OntNames[prop]:prop);
+                            return new XElement("th", columnname); 
+                        }))),
+                new XElement("tbody",
+                    new XElement("tr",
+                        new XElement("td", "Cell 1.1"),
+                        new XElement("td", "Cell 1.2"),
+                        new XElement("td", "Cell 1.3")),
+                    new XElement("tr",
+                        new XElement("td", "Cell 2.1"),
+                        new XElement("td", "Cell 2.2"),
+                        new XElement("td", "Cell 2.3")),
+                    null));
+
+            this.xresult = table;
         }
     }
     public class SearchResult 
@@ -112,7 +140,7 @@ namespace Turgunda2.Models
             this.id = record.LastId;
             string type_id = record.TypeId;
             this.type_id = type_id;
-            this.type = Common.Types.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
+            this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.type == null) this.type = type_id;
             this.name = Common.GetNameFromRecord(record);
             farr = record.RecordElements.Where(el => !el.IsObjectProperty)

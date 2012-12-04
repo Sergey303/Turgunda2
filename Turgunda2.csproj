@@ -73,12 +73,15 @@
     </Compile>
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\HomeModels.cs" />
+    <Compile Include="Models\ListView.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StaticObjects.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App_Data\TextFile1.txt" />
-    <Content Include="config.xml" />
+    <Content Include="config.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Content\themes\base\images\ui-bg_flat_0_aaaaaa_40x100.png" />
     <Content Include="Content\themes\base\images\ui-bg_flat_75_ffffff_40x100.png" />
     <Content Include="Content\themes\base\images\ui-bg_glass_55_fbf9ee_1x400.png" />

@@ -1,0 +1,20 @@
+﻿@model Turgunda2.Models.PortraitModel
+
+<div>@Model.type</div>
+<h2>@Model.name</h2>
+<table>
+    <tr>
+        <td>@Model.id</td>
+        <td></td>
+        <td>@Model.type_id</td>
+    </tr>
+
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+
+</table>
+
+<div>@Html.Raw(Model.xresult.ToString())</div>

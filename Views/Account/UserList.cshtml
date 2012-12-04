@@ -1,0 +1,40 @@
+﻿@{
+    ViewBag.Title = "UserList";
+    var users = System.Web.Security.Membership.GetAllUsers();
+    List<object> els = new List<object>();
+    foreach (var u in users)
+    {
+        els.Add(u);
+    }
+    var qu = (User.IsInRole("admin") || User.Identity.Name == "admin") ? 
+        els.Cast<System.Web.Security.MembershipUser>().ToArray() :
+        new MembershipUser[0];
+    
+}
+
+<h2>Список пользователей</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Пользователь</th>
+            <th>Описание</th>
+            <th>Роли</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in qu)
+    {
+        <tr>
+            <td><a href="UserControl?username=@user.UserName">@user.UserName</a></td>
+            <td>@user.Comment</td>
+            <td>
+            @{
+                var rls = Roles.GetRolesForUser(user.UserName);
+                if (rls.Count() != 0)
+                { <span>@rls.Aggregate((sum, s)=> sum + " " + s)</span> }
+            }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

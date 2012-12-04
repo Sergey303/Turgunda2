@@ -1,0 +1,16 @@
+﻿@using System.Xml.Linq
+@model Turgunda2.Models.SearchModel
+           
+
+<div>@Model.message</div>
+@{
+    var results = Model.Results;
+    foreach (Turgunda2.Models.SearchResult r in results) 
+    {
+        string url = Url.Content("~/Home/Portrait?id=" + r.id);
+        <div>
+            <span>@r.type</span>
+            <a href="@url">@r.value</a>
+        </div>
+    }
+}

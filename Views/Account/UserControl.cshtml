@@ -1,0 +1,63 @@
+﻿@{
+    ViewBag.Title = "UserControl";
+    //var users = Membership.GetAllUsers();
+
+    var uname = Request.Params["username"];
+}
+
+<h2>Управление пользователем</h2>
+<div>@uname</div>
+@if (uname == null)
+{
+    <div>Незарегистрированный пользователь, где-то закралась ошибка, сообщите разработчику!</div>
+}
+else
+{
+    var user = System.Web.Security.Membership.GetUser(uname);
+
+    if (System.Web.Security.Roles.GetAllRoles().Count() == 0)
+    {
+        System.Web.Security.Roles.CreateRole("admin");
+        System.Web.Security.Roles.CreateRole("user");
+    }
+    var roles = System.Web.Security.Roles.GetAllRoles();
+    var uroles = System.Web.Security.Roles.GetRolesForUser(uname);
+    
+    <div><a href="UserList">К списку пользователей</a></div>
+    <form method="post" action="UserControl">
+    <input type="hidden" name="username" value="@uname" />
+    <table>
+        <tbody>
+            <tr>
+                <td>Пользователь</td>
+                <td>@user.UserName</td>
+            </tr>
+            <tr>
+                <td>Описание</td>
+                <td><input type="text" name="comment" value="@user.Comment" /></td>
+            </tr>
+            <tr>
+                <td>Роли</td>
+                <td>
+                @foreach (var role in roles)
+                {
+                    <div>
+                    @if (uroles.Contains(role))
+                    {
+                    <input type="checkbox" checked="checked" name="@role" />
+                    }
+                    else
+                    {
+                    <input type="checkbox" name="@role" />
+                    }
+                    <span>@role</span>
+                    </div>
+                }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <input type="submit" value="Изменить" />
+    </form>
+}
+

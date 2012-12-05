@@ -61,6 +61,8 @@ namespace Turgunda2.Models
         public string type;
         public string name;
         public XElement xresult;
+        public XElement xinverse;
+        public XElement look;
         public PortraitModel(string id)
         {
             var record = sema2012m.DbEntry.GetRecordById(id);
@@ -73,30 +75,64 @@ namespace Turgunda2.Models
             XElement format = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
             if (type_id == ONames.t_person) format = Common.format_p;
             XElement xres = sema2012m.DbEntry.GetItemByIdFormatted(id, format);
-            //var query = format;
+            var resultset = new XElement[] { xres };
+            XElement table = ConstructTable(format, resultset);
+
+            XElement xrecord = new XElement("record", 
+                //new XAttribute("id", format.Attribute("id").Value),
+                new XAttribute("type", format.Attribute("type").Value));
+            foreach (var finv in format.Elements("inverse"))
+            {
+                XElement inverse = new XElement("inverse", new XAttribute("prop", finv.Attribute("prop").Value));
+                var inverse_p_set = xres.Elements("inverse")
+                    .Where(inv => inv.Attribute("prop").Value == finv.Attribute("prop").Value).ToArray();
+                foreach (var frec in finv.Elements("record"))
+                {
+                    XAttribute t_att = frec.Attribute("type");
+                    var record_t_set = inverse_p_set.Elements("record")
+                        .Where(re => t_att == null ? true : re.Attribute("type").Value == t_att.Value)
+                        .ToArray();
+                    XElement tab = ConstructTable(frec, record_t_set);
+                    inverse.Add(new XElement("record",
+                        //new XAttribute(rec.Attribute("id")),
+                        t_att==null ? null : new XAttribute(frec.Attribute("type")),
+                        tab));
+                }
+                xrecord.Add(inverse);
+            }
+                
+            //foreach (var rec in 
+            //var query = format.Elements("inverse")
+            look = xrecord;
+
+            this.xresult = table;
+        }
+
+        private static XElement ConstructTable(XElement format, IEnumerable<XElement> resultset)
+        {
             XElement table = new XElement("table",
                 new XElement("thead",
                     new XElement("tr",
-                        format.Elements().Where(el => el.Name == "field")
-                        .Select(el => {
+                        format.Elements().Where(el => el.Name == "field" || el.Name == "direct")
+                        .Select(el =>
+                        {
                             string prop = el.Attribute("prop").Value;
                             XElement label = el.Element("label");
-                            string columnname = label != null ? label.Value : 
-                                (Common.OntNames.ContainsKey(prop)?Common.OntNames[prop]:prop);
-                            return new XElement("th", columnname); 
+                            string columnname = label != null ? label.Value :
+                                (Common.OntNames.ContainsKey(prop) ? Common.OntNames[prop] : prop);
+                            return new XElement("th", columnname);
                         }))),
                 new XElement("tbody",
-                    new XElement("tr",
-                        new XElement("td", "Cell 1.1"),
-                        new XElement("td", "Cell 1.2"),
-                        new XElement("td", "Cell 1.3")),
-                    new XElement("tr",
-                        new XElement("td", "Cell 2.1"),
-                        new XElement("td", "Cell 2.2"),
-                        new XElement("td", "Cell 2.3")),
+                    resultset.Select(xr => new XElement("tr",
+                        format.Elements().Where(el => el.Name == "field" || el.Name == "direct")
+                        .Select(el =>
+                        {
+                            string prop = el.Attribute("prop").Value;
+                            var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
+                            return new XElement("td", xvalue == null ? "" : xvalue.Value);
+                        }))),
                     null));
-
-            this.xresult = table;
+            return table;
         }
     }
     public class SearchResult 

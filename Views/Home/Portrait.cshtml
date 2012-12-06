@@ -1,9 +1,42 @@
 ﻿@model Turgunda2.Models.PortraitModel
+@{
+    var maintable = Model.xresult.Element("table");
+}
 
 <div>@Model.type</div>
-<h2>@Model.name</h2>
+<h2 style="color: #5c87b2;">@Model.name</h2>
 
-<div>@Html.Raw(Model.xresult.ToString())</div>
+@if (maintable != null)
+{
+<div>@Html.Raw(maintable.ToString())</div>
+}
 
+<table>
+@foreach (var inverse in Model.xresult.Elements("inverse"))
+{
+    string prop = inverse.Attribute("prop").Value;
+    var label = inverse.Element("label");
+    if (label != null) { prop = label.Value; }
+    <tr>
+        <td>@prop</td>
+        <td>
+    @foreach (var rec in inverse.Elements("record"))
+    {
+        var labe = rec.Element("label");
+        if (labe != null)
+        {
+            <div>@labe.Value</div>
+        }
+        @Html.Raw(rec.ToString());
+    }
+        </td>
+    </tr>
+}
+</table>
+
+
+@if (Model.look != null)
+{
 <pre>@Model.look.ToString()</pre>
+}
 <div></div>

@@ -16,6 +16,10 @@ body {
     padding: 0;
     color: #696969;
 }
+#data 
+{
+    font-weight:bold;
+}
 
 a:link {
     color: #034af3;

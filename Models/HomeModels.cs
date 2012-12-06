@@ -18,9 +18,15 @@ namespace Turgunda2.Models
             new string[] {"http://fogid.net/o/person", "персона"},
             new string[] {"http://fogid.net/o/org-sys", "орг. система"},
             new string[] {"http://fogid.net/o/collection", "коллекция"},
+            new string[] {"http://fogid.net/o/document", "документ"},
+            new string[] {"http://fogid.net/o/photo-doc", "фото документ"},
+            new string[] {"http://fogid.net/o/video-doc", "видео документ"},
             new string[] {"http://fogid.net/o/name", "имя"},
             new string[] {"http://fogid.net/o/from-date", "нач.дата"},
             new string[] {"http://fogid.net/o/to-date", "кон.дата"},
+            new string[] {"http://fogid.net/o/in-doc", "в документе"},
+            new string[] {"http://fogid.net/o/degree", "степень"},
+            new string[] {"http://fogid.net/o/", ""},
         };
         public static Dictionary<string, string> OntNames = new Dictionary<string, string>(
             OntPairs.ToDictionary(pa => pa[0], pa => pa[1]));
@@ -32,20 +38,45 @@ namespace Turgunda2.Models
                 .Select(re => re.Value)
                 .FirstOrDefault();
         }
+        public static XElement format_uni = new XElement("record",
+                new XElement("field", new XAttribute("prop", ONames.p_name)),
+                new XElement("field", new XAttribute("prop", ONames.p_fromdate), new XElement("label", "нач.дата")),
+                null);
+        public static XElement format_с_list = new XElement("record",
+                new XAttribute("type", ONames.FOG + "collection"),
+                new XElement("field", new XAttribute("prop", ONames.p_name)),
+                new XElement("field", new XAttribute("prop", ONames.p_description)),
+                new XElement("field", new XAttribute("prop", ONames.p_fromdate)),
+                new XElement("field", new XAttribute("prop", ONames.p_todate)),
+                new XElement("inverse", new XAttribute("prop", ONames.p_incollection),
+                new XElement("label", ""),
+                    new XElement("record", new XAttribute("type", ONames.FOG + "collection-member"),
+                        new XElement("direct", new XAttribute("prop", ONames.p_collectionitem), new XElement("label", ""),
+                            new XElement("record",
+                                new XElement("label", ""),
+                                new XElement("field", new XAttribute("prop", ONames.p_name)),
+                                null)))));
         public static XElement format_p = new XElement("record",
                 new XAttribute("type", ONames.t_person),
                 new XElement("field", new XAttribute("prop", ONames.p_name)),
                 new XElement("field", new XAttribute("prop", ONames.p_fromdate), new XElement("label", "рожд.")),
+                new XElement("direct", new XAttribute("prop", ONames.p_father), new XElement("label", "отец"),
+                    new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name))),
+                    null),
                 new XElement("inverse", new XAttribute("prop", ONames.p_reflected),
+                    new XElement("label", "отражения"),
                     new XElement("record", new XAttribute("type", ONames.FOG + "reflection"),
                         new XElement("direct", new XAttribute("prop", ONames.p_indoc),
                             new XElement("record",
+                                new XElement("label", ""),
+                                new XElement("field", new XAttribute("prop", ONames.p_name)),
                                 new XElement("field", new XAttribute("prop", ONames.p_fromdate)),
                                 new XElement("inverse", new XAttribute("prop", ONames.p_fordocument),
                                     new XElement("record", new XAttribute("type", ONames.FOG + "FileStore"),
                                         new XElement("field", new XAttribute("prop", ONames.FOG + "uri"))
                     )))))),
                 new XElement("inverse", new XAttribute("prop", ONames.p_hastitle),
+                    new XElement("label", "титулы/награды"),
                     new XElement("record",
                         new XElement("field", new XAttribute("prop", ONames.p_fromdate)),
                         new XElement("field", new XAttribute("prop", ONames.p_degree))
@@ -74,16 +105,20 @@ namespace Turgunda2.Models
             this.name = Common.GetNameFromRecord(record);
             XElement format = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
             if (type_id == ONames.t_person) format = Common.format_p;
+            else if (type_id == ONames.FOG + "collection") format = Common.format_с_list;
             XElement xres = sema2012m.DbEntry.GetItemByIdFormatted(id, format);
             var resultset = new XElement[] { xres };
-            XElement table = ConstructTable(format, resultset);
+            XElement table_main = ConstructTable(format, resultset);
 
             XElement xrecord = new XElement("record", 
                 //new XAttribute("id", format.Attribute("id").Value),
-                new XAttribute("type", format.Attribute("type").Value));
+                //new XAttribute("type", format.Attribute("type").Value),
+                table_main);
             foreach (var finv in format.Elements("inverse"))
             {
-                XElement inverse = new XElement("inverse", new XAttribute("prop", finv.Attribute("prop").Value));
+                var label = finv.Element("label");
+                XElement inverse = new XElement("inverse", new XAttribute("prop", finv.Attribute("prop").Value),
+                    label == null ? null : new XElement(label));
                 var inverse_p_set = xres.Elements("inverse")
                     .Where(inv => inv.Attribute("prop").Value == finv.Attribute("prop").Value).ToArray();
                 foreach (var frec in finv.Elements("record"))
@@ -103,9 +138,10 @@ namespace Turgunda2.Models
                 
             //foreach (var rec in 
             //var query = format.Elements("inverse")
-            look = xrecord;
+            //look = xrecord;
+            //look = xres;
 
-            this.xresult = table;
+            this.xresult = xrecord;
         }
 
         private static XElement ConstructTable(XElement format, IEnumerable<XElement> resultset)
@@ -128,8 +164,25 @@ namespace Turgunda2.Models
                         .Select(el =>
                         {
                             string prop = el.Attribute("prop").Value;
-                            var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
-                            return new XElement("td", xvalue == null ? "" : xvalue.Value);
+                            if (el.Name == "field")
+                            {
+                                var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
+                                return new XElement("td",
+                                    new XAttribute("style", "font-weight:bold; color:Black;"),
+                                    xvalue == null ? "" : xvalue.Value);
+                            }
+                            else
+                            {
+                                var dir = xr.Elements("direct").FirstOrDefault(d => d.Attribute("prop").Value == prop);
+                                if (dir == null) return new XElement("td");
+                                var re = dir.Element("record");
+                                if (re == null) return new XElement("td");
+                                string re_id = re.Attribute("id").Value;
+                                XElement name_el = re.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == ONames.p_name);                                
+                                return new XElement("td",
+                                    new XElement("a", new XAttribute("href", "?id="+re_id), 
+                                        name_el==null ? "link" : name_el.Value));
+                            }
                         }))),
                     null));
             return table;

@@ -72,12 +72,14 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Controllers\DocsController.cs" />
     <Compile Include="Models\HomeModels.cs" />
     <Compile Include="Models\ListView.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StaticObjects.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ApplicationProfile.xml" />
     <Content Include="App_Data\TextFile1.txt" />
     <Content Include="config.xml">
       <SubType>Designer</SubType>
@@ -110,6 +112,7 @@
     <Content Include="Content\themes\base\jquery.ui.tabs.css" />
     <Content Include="Content\themes\base\jquery.ui.theme.css" />
     <Content Include="Global.asax" />
+    <Content Include="ontology_iis-v9-doc_ruen.xml" />
     <Content Include="Scripts\jquery-1.5.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.5.1.js" />
     <Content Include="Scripts\jquery-1.5.1.min.js" />

@@ -3,7 +3,7 @@
     var maintable = Model.xresult.Element("table");
 }
 
-<div>@Model.type</div>
+<div>@Model.typelabel</div>
 <h2 style="color: #5c87b2;">@Model.name</h2>
 
 @if (maintable != null)
@@ -17,7 +17,7 @@
     string prop = inverse.Attribute("prop").Value;
     var label = inverse.Element("label");
     if (label != null) { prop = label.Value; }
-    <tr>
+    <tr valign="top">
         <td>@prop</td>
         <td>
     @foreach (var rec in inverse.Elements("record"))
@@ -27,7 +27,7 @@
         {
             <div>@labe.Value</div>
         }
-        @Html.Raw(rec.ToString());
+        @Html.Raw(rec.Element("table").ToString());
     }
         </td>
     </tr>

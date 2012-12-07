@@ -44,11 +44,16 @@ namespace Turgunda2
                 turlog("Error while Turgunda initiating: " + ex.Message);
                 return;
             }
+            // Загрузка профиля
+            XElement appProfile = XElement.Load(path + "ApplicationProfile.xml");
+            Turgunda2.Models.Common.formats = appProfile.Element("formats");
+            XElement ontology = XElement.Load(path + "ontology_iis-v9-doc_ruen.xml");
+            Turgunda2.Models.Common.LoadOntNamesFromOntology(ontology);
 
             turlog("Turgunda initiated");
         }
 
-        private static Dictionary<string, factograph.CassetteInfo> cassettesInfo = new Dictionary<string, factograph.CassetteInfo>();
+        public static Dictionary<string, factograph.CassetteInfo> cassettesInfo = new Dictionary<string, factograph.CassetteInfo>();
         private static Dictionary<string, factograph.RDFDocumentInfo> docsInfo = new Dictionary<string, factograph.RDFDocumentInfo>();
         public static void LoadFromCassettes()
         {

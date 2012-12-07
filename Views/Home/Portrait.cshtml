@@ -4,7 +4,15 @@
 }
 
 <div>@Model.typelabel</div>
+@if (Model.uri == null)
+{
 <h2 style="color: #5c87b2;">@Model.name</h2>
+}
+else
+{
+    string url = Url.Content("~/Docs/GetPhoto?s=medium&u=" + Model.uri);
+    <img src="@url" />
+}
 
 @if (maintable != null)
 {

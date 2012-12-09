@@ -79,7 +79,9 @@
     <Compile Include="StaticObjects.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ApplicationProfile.xml" />
+    <Content Include="ApplicationProfile.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="config.xml">
       <SubType>Designer</SubType>
     </Content>

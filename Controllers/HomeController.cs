@@ -58,7 +58,11 @@ namespace Turgunda2.Controllers
             ViewData["message"] = message;
             return PartialView();
         }
-
+        public ActionResult CheckDatabase()
+        {
+            StaticObjects.CheckDatabase();
+            return RedirectToAction("Index", "Home");
+        }
         public ActionResult About()
         {
             return View();

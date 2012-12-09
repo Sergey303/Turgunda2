@@ -64,6 +64,7 @@ namespace Turgunda2.Models
         {
             // Сначала, базовые поля
             var record = sema2012m.DbEntry.GetRecordById(id);
+            if (record == null) return;
             this.id = record.LastId;
             string type_id = record.TypeId;
             this.type_id = type_id;

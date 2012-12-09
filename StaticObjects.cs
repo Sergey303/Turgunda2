@@ -62,7 +62,16 @@ namespace Turgunda2
             foreach (string dbfile in fogfilearr.Select(x => x.filePath))
             {
                 var xdb = XElement.Load(dbfile);
-                sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
+                sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray());
+            }
+        }
+        public static void CheckDatabase()
+        {
+            var fogfilearr = GetFogFiles(cassettesInfo).ToArray();
+            foreach (string dbfile in fogfilearr.Select(x => x.filePath))
+            {
+                var xdb = XElement.Load(dbfile);
+                sema2012m.DbEntry.CheckXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()), turlog);
             }
         }
         public static void ConnectToCassettes()

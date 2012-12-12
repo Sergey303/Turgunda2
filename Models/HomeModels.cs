@@ -60,8 +60,10 @@ namespace Turgunda2.Models
         public XElement xresult;
         public XElement xinverse;
         public XElement look;
+        public string message;
         public PortraitModel(string id)
         {
+            DateTime tt0 = DateTime.Now;
             // Сначала, базовые поля
             var record = sema2012m.DbEntry.GetRecordById(id);
             if (record == null) return;
@@ -117,6 +119,7 @@ namespace Turgunda2.Models
                         tab));
                 }
                 xrecord.Add(inverse);
+                message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
             }
                 
             this.xresult = xrecord;

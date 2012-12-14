@@ -12,7 +12,7 @@ namespace Turgunda2
         public static bool Initiated { get { return _initiated; } }
         private static string _path;
         private static object locker = new object();
-        private static sema2012m.WriteLine turlog = s => { };
+        private static sema2012m.LogLine turlog = s => { };
         public static void Init(string path)
         {
             if (string.IsNullOrEmpty(path)) return;

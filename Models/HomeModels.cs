@@ -173,7 +173,7 @@ namespace Turgunda2.Models
                                         ret_element = new XElement("div", //new XAttribute("class", "brick"),
                                             new XElement("div",
                                                 new XElement("a", new XAttribute("href", "?id=" + re_id),
-                                                    new XElement("img", new XAttribute("src", "/Docs/GetPhoto?s=small&u="+ uri.Value)))),
+                                                    new XElement("img", new XAttribute("src", "../Docs/GetPhoto?s=small&u="+ uri.Value)))),
                                             new XElement("div",
                                                 new XElement("span", name_el == null ? "link" : name_el.Value)),
                                             null);

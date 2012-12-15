@@ -1,7 +1,9 @@
-﻿@model Turgunda2.Models.PortraitModel
+﻿@using System.Xml.Linq
+@model Turgunda2.Models.PortraitModel
 @{
     if (Model == null || Model.xresult == null) { return; }
     var maintable = Model.xresult.Element("table");
+    XElement tab = null;
 }
 
 <div>@Model.typelabel</div>
@@ -36,7 +38,26 @@ else
         {
             <div>@labe.Value</div>
         }
-        @Html.Raw(rec.Element("table").ToString());
+        @Html.Raw(rec.Element("table").ToString())
+        @*
+        tab = new XElement("table",
+            rec.Element("table").Elements().Select(thtb => 
+                new XElement(thtb.Name, thtb.Attributes(), thtb.Elements().Select(row => new XElement(row.Name,
+                    row.Elements().Select(tdh => new XElement(tdh.Name, tdh.Attributes(),
+                        tdh.Nodes().Select(nd => {
+                            if (nd.NodeType == System.Xml.XmlNodeType.Element)
+                            {
+                                return new XElement(((XElement)nd).Name);
+                            }
+                            else if (nd.NodeType == System.Xml.XmlNodeType.Text)
+                            {
+                                return new XElement("span", new XText(((XText)nd).Value));
+                            }
+                            return (XElement)null;
+                        })))
+                    )))));
+        tab = rec;
+        *@
     }
         </td>
     </tr>

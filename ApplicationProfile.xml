@@ -6,7 +6,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/from-date"/>
 			<field prop="http://fogid.net/o/to-date"/>
-			<field prop="http://fogid.net/o/sex"/>
+			<field prop="http://fogid.net/o/sex" type="http://fogid.net/o/person-sex"/>
 			<direct prop="http://fogid.net/o/father">
 				<record type="http://fogid.net/o/person">
 					<field prop="http://fogid.net/o/name"/>
@@ -79,7 +79,7 @@
 				<record type="http://fogid.net/o/participation">
 					<field prop="http://fogid.net/o/from-date"/>
 					<field prop="http://fogid.net/o/to-date"/>
-					<field prop="http://fogid.net/o/role-classification"/>
+					<field prop="http://fogid.net/o/role-classification" type="http://fogid.net/o/role-classificator"/>
 					<field prop="http://fogid.net/o/role"/>
 					<direct prop="http://fogid.net/o/in-org">
 						<record type="http://fogid.net/o/org-sys">
@@ -195,7 +195,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument">
+			<inverse prop="http://fogid.net/o/forDocument" visible="none">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 				</record>
@@ -212,7 +212,7 @@
 			</inverse>
 			<inverse prop="http://fogid.net/o/in-doc">
 				<record type="http://fogid.net/o/reflection">
-					<field prop="http://fogid.net/o/ground"/>
+					<field prop="http://fogid.net/o/ground" type="http://fogid.net/o/personage-ground"/>
 					<direct prop="http://fogid.net/o/reflected">
 						<record type="http://fogid.net/o/person">
 							<field prop="http://fogid.net/o/name"/>
@@ -269,7 +269,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument">
+			<inverse prop="http://fogid.net/o/forDocument" visible="none">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 					<field prop="http://fogid.net/o/docmetainfo"/>
@@ -337,7 +337,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument">
+			<inverse prop="http://fogid.net/o/forDocument" visible="none">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 				</record>
@@ -405,7 +405,7 @@
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
 			<field prop="http://fogid.net/o/doc-content"/>
-			<inverse prop="http://fogid.net/o/forDocument">
+			<inverse prop="http://fogid.net/o/forDocument" visible="none">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 					<field prop="http://fogid.net/o/contentType"/>

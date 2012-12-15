@@ -27,8 +27,10 @@ namespace Turgunda2.Models
         };
         public static Dictionary<string, string> OntNames = new Dictionary<string, string>(
             OntPairs.ToDictionary(pa => pa[0], pa => pa[1]));
+        private static XElement _ontology;
         public static void LoadOntNamesFromOntology(XElement ontology)
         {
+            _ontology = ontology;
             var ont_names = ontology.Elements()
                 .Where(el => el.Name == "Class" || el.Name == "ObjectProperty" || el.Name == "DatatypeProperty")
                 .Where(el => el.Elements("label").Any())
@@ -39,6 +41,16 @@ namespace Turgunda2.Models
                 })
                 .ToDictionary(pa => pa.type_id, pa => pa.label);
             OntNames = ont_names;
+        }
+        public static string GetEnumStateLabel(string enum_type, string state_value)
+        {
+            var et_def = _ontology.Elements("EnumerationType")
+                .FirstOrDefault(et => et.Attribute(ONames.rdfabout).Value == enum_type);
+            if (et_def == null) return "";
+            var et_state = et_def.Elements("state")
+                .FirstOrDefault(st => st.Attribute("value").Value == state_value && st.Attribute(ONames.xmllang).Value == "ru");
+            if (et_state == null) return "";
+            return et_state.Value;
         }
 
         public static string GetNameFromRecord(sema2012m.EntityInfo record)
@@ -95,7 +107,7 @@ namespace Turgunda2.Models
                 //new XAttribute("id", format.Attribute("id").Value),
                 //new XAttribute("type", format.Attribute("type").Value),
                 table_main);
-            foreach (var finv in format.Elements("inverse"))
+            foreach (var finv in format.Elements("inverse").Where(i => i.Attribute("visible")==null || i.Attribute("visible").Value != "none"))
             {
                 string prop = finv.Attribute("prop").Value;
                 XElement label = finv.Element("label");
@@ -131,7 +143,9 @@ namespace Turgunda2.Models
             XElement table = new XElement("table",
                 new XElement("thead",
                     new XElement("tr",
-                        format.Elements().Where(el => el.Name == "field" || el.Name == "direct")
+                        format.Elements().Where(el => 
+                            (el.Name == "field" || el.Name == "direct") && 
+                            (el.Attribute("visible")==null || el.Attribute("visible").Value != "none"))
                         .Select(el =>
                         {
                             string prop = el.Attribute("prop").Value;
@@ -142,16 +156,20 @@ namespace Turgunda2.Models
                         }))),
                 new XElement("tbody",
                     resultset.Select(xr => new XElement("tr",
-                        format.Elements().Where(el => el.Name == "field" || el.Name == "direct")
+                        format.Elements().Where(el =>
+                            (el.Name == "field" || el.Name == "direct") &&
+                            (el.Attribute("visible") == null || el.Attribute("visible").Value != "none"))
                         .Select(el =>
                         {
                             string prop = el.Attribute("prop").Value;
                             if (el.Name == "field")
                             {
+                                var enum_type_att = el.Attribute("type");
                                 var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
                                 return new XElement("td",
                                     new XAttribute("style", "font-weight:bold; color:Black;"),
-                                    xvalue == null ? "" : xvalue.Value);
+                                    xvalue == null ? "" :
+                                        (enum_type_att == null ? xvalue.Value : Common.GetEnumStateLabel(enum_type_att.Value, xvalue.Value)));
                             }
                             else
                             {
@@ -205,6 +223,7 @@ namespace Turgunda2.Models
         public string type;
         public string value;
         public string lang;
+        public string type_name;
     }
     public class SearchModel
     {
@@ -214,14 +233,25 @@ namespace Turgunda2.Models
         public SearchModel(string searchstring, string type)
         {
             DateTime tt0 = DateTime.Now;
+            var sr = sema2012m.DbEntry.SearchByName(searchstring).ToArray();
             _results = sema2012m.DbEntry.SearchByName(searchstring)
                 .Select(xres =>
                 {
-                    SearchResult res = new SearchResult() { id = xres.Attribute("id").Value, value = xres.Value };
+                    XElement name_el = xres
+                        .Elements("field").Where(f => f.Attribute("prop").Value == ONames.p_name)
+                        .OrderByDescending(n => n.Attribute(ONames.xmllang) == null ? "ru" : n.Attribute(ONames.xmllang).Value)
+                        .FirstOrDefault();
+                    string name = name_el == null ? "noname" : name_el.Value;
+                    SearchResult res = new SearchResult() { id = xres.Attribute("id").Value, value = name };
                     XAttribute t_att = xres.Attribute("type");
                     if (t_att != null) res.type = t_att.Value;
+                    string tname = "";
+                    Common.OntNames.TryGetValue(res.type, out tname);
+                    res.type_name = tname;
                     return res;
-                }).ToArray();
+                })
+                .OrderBy(s => s.value)
+                .ToArray();
             message = "duration=" + ((DateTime.Now - tt0).Ticks/10000L);
         }
     }

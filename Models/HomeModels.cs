@@ -140,6 +140,7 @@ namespace Turgunda2.Models
 
         private static XElement ConstructTable(XElement format, IEnumerable<XElement> resultset)
         {
+
             XElement table = new XElement("table",
                 new XElement("thead",
                     new XElement("tr",

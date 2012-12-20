@@ -35,9 +35,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CassetteKernel">
-      <HintPath>..\CassetteKernel\bin\CassetteKernel.dll</HintPath>
-    </Reference>
     <Reference Include="EntityFramework">
       <HintPath>..\packages\EntityFramework.4.1.10331.0\lib\EntityFramework.dll</HintPath>
     </Reference>
@@ -181,6 +178,10 @@
     <Content Include="Views\Home\Search.cshtml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CassetteKernel\CassetteKernel.csproj">
+      <Project>{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}</Project>
+      <Name>CassetteKernel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\sema2012m\sema2012m.csproj">
       <Project>{01975281-0445-4C25-9E68-2518BE52D855}</Project>
       <Name>sema2012m</Name>

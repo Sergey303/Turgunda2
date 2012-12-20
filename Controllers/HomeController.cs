@@ -37,8 +37,7 @@ namespace Turgunda2.Controllers
         }
         public ActionResult Reload()
         {
-            StaticObjects.ConnectToCassettes();
-            sema2012m.DbEntry.ActivateDatabase();
+            StaticObjects.Init();
             return RedirectToAction("Index", "Home");
         }
         public PartialViewResult LoadDbAction()

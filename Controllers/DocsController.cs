@@ -17,7 +17,7 @@ namespace Turgunda2.Controllers
             string[] parts = pth.Split(new char[] { '/', '.', '_' });
             if (parts.Length < 3) return new EmptyResult();
             factograph.CassetteInfo ci = null;
-            if (!StaticObjects.cassettesInfo.TryGetValue(
+            if (!CassetteKernel.CassettesConnection.cassettesInfo.TryGetValue(
                 "iiss://" + parts[0].ToLower() + "@iis.nsk.su", out ci)) return new EmptyResult();
             string filename = ci.url + "documents/deepzoom/" + pth.Substring(parts[0].Length + 1);
             fn = filename.ToLower();
@@ -60,8 +60,8 @@ namespace Turgunda2.Controllers
         public ActionResult GetPhoto(string u, string s)
         {
             string filename = this.Request.MapPath("..") + "/question.jpg";
-            if (!string.IsNullOrEmpty(u) && StaticObjects.cassettesInfo.ContainsKey(u.Substring(0, u.Length - 15).ToLower()))
-                filename = StaticObjects.cassettesInfo[u.Substring(0, u.Length - 15).ToLower()].url +
+            if (!string.IsNullOrEmpty(u) && CassetteKernel.CassettesConnection.cassettesInfo.ContainsKey(u.Substring(0, u.Length - 15).ToLower()))
+                filename = CassetteKernel.CassettesConnection.cassettesInfo[u.Substring(0, u.Length - 15).ToLower()].url +
                     "documents/" + s + "/" + u.Substring(u.Length - 9) + ".jpg";
             return new FilePathResult(filename, "image/jpeg");
         }
@@ -71,9 +71,9 @@ namespace Turgunda2.Controllers
             //string path = @"D:\home\dev\Turgunda2\";
             string filename = "question.jpg";
             string video_extension = "flv"; //"mp4";
-            if (string.IsNullOrEmpty(u) || !StaticObjects.cassettesInfo.ContainsKey(u.Substring(0, u.Length - 15).ToLower()))
+            if (string.IsNullOrEmpty(u) || !CassetteKernel.CassettesConnection.cassettesInfo.ContainsKey(u.Substring(0, u.Length - 15).ToLower()))
             { return null; }
-            string path = StaticObjects.cassettesInfo[u.Substring(0, u.Length - 15).ToLower()].url +
+            string path = CassetteKernel.CassettesConnection.cassettesInfo[u.Substring(0, u.Length - 15).ToLower()].url +
                 "documents/medium/";
             filename = u.Substring(u.Length - 9) + ".";
             if (System.IO.File.Exists(path + filename + "mp4")) video_extension = "mp4";

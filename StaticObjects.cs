@@ -41,7 +41,6 @@ namespace Turgunda2
             turlog("Turgunda initiated");
         }
 
-
         public static void LoadFromCassettes()
         {
             sema2012m.DbEntry.InitiateDb();

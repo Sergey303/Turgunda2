@@ -11,6 +11,8 @@ namespace Turgunda2
         private static bool _initiated = false;
         public static bool Initiated { get { return _initiated; } }
         private static string _path;
+        private static sema2012m.IAdapter adapter;
+
         public static void Init() { Init(_path); }
         public static void Init(string path)
         {
@@ -18,9 +20,12 @@ namespace Turgunda2
             char c = path[path.Length-1];
             _path = path + (c=='/' || c=='\\' ? "" : "/");
             InitTurlog(path);
+
+            adapter = new AdapterMongo.DbEntry();
+
             XElement xconfig = XElement.Load(path + "config.xml");
             var dbname_att = xconfig.Element("database").Attribute("dbname");
-            if (dbname_att != null) sema2012m.DbEntry.DbName = dbname_att.Value;
+            if (dbname_att != null) adapter.SetDbName(dbname_att.Value);
             turlog("Turgunda initiating... path=" + path);
             try
             {
@@ -41,49 +46,53 @@ namespace Turgunda2
             turlog("Turgunda initiated");
         }
 
-        public static void LoadFromCassettes()
-        {
-            sema2012m.DbEntry.InitiateDb();
-            var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-            foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-            {
-                var xdb = XElement.Load(dbfile);
-                sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
-            }
-        }
-        public static void CheckDatabase()
-        {
-            var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-            foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-            {
-                var xdb = XElement.Load(dbfile);
-                sema2012m.DbEntry.CheckXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()), turlog);
-            }
-        }
-        public static void LoadFromCassettesExpress()
-        {
-            Console.WriteLine("InitiateDb starts");
-            sema2012m.DbEntry.InitiateDb();
-            Console.WriteLine("InitiateDb ok. Scan cassettes starts");
-            var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-            Dictionary<string, sema2012m.ResInfo> table_ri = new Dictionary<string, sema2012m.ResInfo>();
-            foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-            {
-                var xdb = XElement.Load(dbfile);
-                var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
-                //sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
-                sema2012m.PrepareRiTable.AppendXflowToRiTable(table_ri,
-                    xdb_converted, dbfile, s => Console.WriteLine(s));
-            }
-            Console.WriteLine("Scan cassettes ok. Loading database starts");
-            foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-            {
-                Console.WriteLine("Loading from " + dbfile);
-                var xdb = XElement.Load(dbfile);
-                var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
-                sema2012m.PrepareRiTable.LoadXFlowUsingRiTable(xdb_converted, table_ri);
-            }
-        }
+        public static IEnumerable<XElement> SearchByName(string searchstring) { return adapter.SearchByName(searchstring); }
+        public static string GetType(string id) { return adapter.GetType(id); }
+        public static XElement GetItemById(string id, XElement format) { return adapter.GetItemById(id, format); }
+
+        //public static void LoadFromCassettes()
+        //{
+        //    sema2012m.DbEntry.InitiateDb();
+        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
+        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
+        //    {
+        //        var xdb = XElement.Load(dbfile);
+        //        sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
+        //    }
+        //}
+        //public static void CheckDatabase()
+        //{
+        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
+        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
+        //    {
+        //        var xdb = XElement.Load(dbfile);
+        //        sema2012m.DbEntry.CheckXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()), turlog);
+        //    }
+        //}
+        //public static void LoadFromCassettesExpress()
+        //{
+        //    Console.WriteLine("InitiateDb starts");
+        //    sema2012m.DbEntry.InitiateDb();
+        //    Console.WriteLine("InitiateDb ok. Scan cassettes starts");
+        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
+        //    Dictionary<string, sema2012m.ResInfo> table_ri = new Dictionary<string, sema2012m.ResInfo>();
+        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
+        //    {
+        //        var xdb = XElement.Load(dbfile);
+        //        var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
+        //        //sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
+        //        sema2012m.PrepareRiTable.AppendXflowToRiTable(table_ri,
+        //            xdb_converted, dbfile, s => Console.WriteLine(s));
+        //    }
+        //    Console.WriteLine("Scan cassettes ok. Loading database starts");
+        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
+        //    {
+        //        Console.WriteLine("Loading from " + dbfile);
+        //        var xdb = XElement.Load(dbfile);
+        //        var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
+        //        sema2012m.PrepareRiTable.LoadXFlowUsingRiTable(xdb_converted, table_ri);
+        //    }
+        //}
 
         // Log - area
         private static object locker = new object();

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sema2012m", "..\sema2012m\s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CassetteKernel", "..\CassetteKernel\CassetteKernel.csproj", "{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdapterMongo", "..\AdapterMongo\AdapterMongo.csproj", "{2E088609-1E5F-4257-A15F-A72BCACE37D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E088609-1E5F-4257-A15F-A72BCACE37D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E088609-1E5F-4257-A15F-A72BCACE37D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E088609-1E5F-4257-A15F-A72BCACE37D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E088609-1E5F-4257-A15F-A72BCACE37D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

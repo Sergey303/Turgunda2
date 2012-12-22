@@ -46,7 +46,7 @@ namespace Turgunda2.Controllers
             System.DateTime tt0 = DateTime.Now;
             try
             {
-                Turgunda2.StaticObjects.LoadFromCassettes();
+                //Turgunda2.StaticObjects.LoadFromCassettes();
                 //Sema2012.Engine.Reload(true);
                 message += ". Время загрузки: " + (DateTime.Now - tt0).Ticks / 10000000L + " сек.";
             }
@@ -59,7 +59,7 @@ namespace Turgunda2.Controllers
         }
         public ActionResult CheckDatabase()
         {
-            StaticObjects.CheckDatabase();
+            //StaticObjects.CheckDatabase();
             return RedirectToAction("Index", "Home");
         }
         public ActionResult About()

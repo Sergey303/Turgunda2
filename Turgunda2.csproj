@@ -110,7 +110,6 @@
     <Content Include="Content\themes\base\jquery.ui.tabs.css" />
     <Content Include="Content\themes\base\jquery.ui.theme.css" />
     <Content Include="Global.asax" />
-    <Content Include="ontology_iis-v9-doc_ruen.xml" />
     <Content Include="Scripts\jquery-1.5.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.5.1.js" />
     <Content Include="Scripts\jquery-1.5.1.min.js" />
@@ -178,6 +177,10 @@
     <Content Include="Views\Home\Search.cshtml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AdapterMongo\AdapterMongo.csproj">
+      <Project>{2E088609-1E5F-4257-A15F-A72BCACE37D0}</Project>
+      <Name>AdapterMongo</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CassetteKernel\CassetteKernel.csproj">
       <Project>{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}</Project>
       <Name>CassetteKernel</Name>

@@ -53,14 +53,14 @@ namespace Turgunda2.Models
             return et_state.Value;
         }
 
-        public static string GetNameFromRecord(sema2012m.EntityInfo record)
-        {
-            return record.RecordElements
-                .Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
-                .OrderByDescending(re => re.Lang) // Это чтобы получить русский вариант, в будущем, это надо изменить
-                .Select(re => re.Value)
-                .FirstOrDefault();
-        }
+        //public static string GetNameFromRecord(sema2012m.EntityInfo record)
+        //{
+        //    return record.RecordElements
+        //        .Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
+        //        .OrderByDescending(re => re.Lang) // Это чтобы получить русский вариант, в будущем, это надо изменить
+        //        .Select(re => re.Value)
+        //        .FirstOrDefault();
+        //}
     }
     public class PortraitModel
     {
@@ -77,14 +77,20 @@ namespace Turgunda2.Models
         {
             DateTime tt0 = DateTime.Now;
             // Сначала, базовые поля
-            var record = sema2012m.DbEntry.GetRecordById(id);
-            if (record == null) return;
-            this.id = record.LastId;
-            string type_id = record.TypeId;
+            XElement f = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
+            //var record = sema2012m.DbEntry.GetRecordById(id);
+            XElement xrecord = StaticObjects.GetItemById(id, f);
+            //if (record == null) return;
+            if (xrecord == null) return;
+            //this.id = record.LastId;
+            this.id = xrecord.Attribute("id").Value;
+            //string type_id = record.TypeId;
+            string type_id = xrecord.Attribute("type").Value;
             this.type_id = type_id;
             this.typelabel = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.typelabel == null) this.typelabel = type_id;
-            this.name = Common.GetNameFromRecord(record);
+            //this.name = Common.GetNameFromRecord(record);
+            this.name = xrecord.Elements("field").First(fi => fi.Attribute("prop").Value == ONames.p_name).Value;
             // Теперь таблицы
             XElement format = Common.formats.Elements("record")
                 .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == this.type_id);
@@ -92,7 +98,7 @@ namespace Turgunda2.Models
             
             //if (type_id == ONames.t_person) format = Common.format_p;
             //else if (type_id == ONames.FOG + "collection") format = Common.format_с_list;
-            XElement xres = sema2012m.DbEntry.GetItemByIdFormatted(id, format);
+            XElement xres = StaticObjects.GetItemById(id, format);
             // Надо попробовать получить uri
             if (type_id == ONames.FOG + "photo-doc")
             {
@@ -103,7 +109,7 @@ namespace Turgunda2.Models
             var resultset = new XElement[] { xres };
             XElement table_main = ConstructTable(format, resultset);
 
-            XElement xrecord = new XElement("record", 
+            XElement xrec = new XElement("record", 
                 //new XAttribute("id", format.Attribute("id").Value),
                 //new XAttribute("type", format.Attribute("type").Value),
                 table_main);
@@ -130,11 +136,11 @@ namespace Turgunda2.Models
                         rlabel==null ? null : new XElement("label", rlabel.Value),
                         tab));
                 }
-                xrecord.Add(inverse);
-                message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
+                xrec.Add(inverse);
             }
+            this.message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
                 
-            this.xresult = xrecord;
+            this.xresult = xrec;
             //this.look = xrecord;
         }
 
@@ -234,8 +240,8 @@ namespace Turgunda2.Models
         public SearchModel(string searchstring, string type)
         {
             DateTime tt0 = DateTime.Now;
-            var sr = sema2012m.DbEntry.SearchByName(searchstring).ToArray();
-            _results = sema2012m.DbEntry.SearchByName(searchstring)
+            //var sr = StaticObjects.SearchByName(searchstring).ToArray();
+            _results = StaticObjects.SearchByName(searchstring)
                 .Select(xres =>
                 {
                     XElement name_el = xres
@@ -274,28 +280,28 @@ namespace Turgunda2.Models
         public Direct[] darr;
         public Inverse[] iarr;
         public PortraitSpecialModel(string id)
-        {
-            var record = sema2012m.DbEntry.GetRecordById(id);
-            this.id = record.LastId;
-            string type_id = record.TypeId;
-            this.type_id = type_id;
-            this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
-            if (this.type == null) this.type = type_id;
-            this.name = Common.GetNameFromRecord(record);
-            farr = record.RecordElements.Where(el => !el.IsObjectProperty)
-                .Select(el => new Field() { prop = el.Predicate, value = el.Value, lang = el.Lang })
-                .ToArray();
-            darr = record.RecordElements.Where(el => el.IsObjectProperty)
-                .Select(el => new Direct() { prop = el.Predicate, resource = el.Value })
-                .ToArray();
-            iarr = sema2012m.DbEntry.GetInverseRecordsById(record)
-                .Select(en => new Inverse()
-                {
-                    about = en.LastId,
-                    prop = en.RecordElements.Where(re => re.IsObjectProperty).First(re => re.Value == this.id).Predicate,
-                    name = en.RecordElements.Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
-                        .Select(re => re.Value).FirstOrDefault()
-                }).ToArray();
+        { // Этот метод надо будет доделать
+            //var record = sema2012m.DbEntry.GetRecordById(id);
+            //this.id = record.LastId;
+            //string type_id = record.TypeId;
+            //this.type_id = type_id;
+            //this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
+            //if (this.type == null) this.type = type_id;
+            //this.name = Common.GetNameFromRecord(record);
+            //farr = record.RecordElements.Where(el => !el.IsObjectProperty)
+            //    .Select(el => new Field() { prop = el.Predicate, value = el.Value, lang = el.Lang })
+            //    .ToArray();
+            //darr = record.RecordElements.Where(el => el.IsObjectProperty)
+            //    .Select(el => new Direct() { prop = el.Predicate, resource = el.Value })
+            //    .ToArray();
+            //iarr = sema2012m.DbEntry.GetInverseRecordsById(record)
+            //    .Select(en => new Inverse()
+            //    {
+            //        about = en.LastId,
+            //        prop = en.RecordElements.Where(re => re.IsObjectProperty).First(re => re.Value == this.id).Predicate,
+            //        name = en.RecordElements.Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
+            //            .Select(re => re.Value).FirstOrDefault()
+            //    }).ToArray();
         }
     }
 }

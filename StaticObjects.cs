@@ -108,10 +108,10 @@ namespace Turgunda2
         }
 
         // Быстрая загрузка данных 
-        public static void LoadFromCassettesExpress(sema2012m.LogLine Protocol, sema2012m.LogLine DbConvertErrors)
+        public static void LoadFromCassettesExpress()
         {
             var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().Select(d => d.filePath).ToArray();
-            engine.LoadFromCassettesExpress(fogfilearr, Protocol, DbConvertErrors);
+            engine.LoadFromCassettesExpress(fogfilearr, turlog, turlog);
         }
 
         public static IEnumerable<XElement> SearchByName(string searchstring) { return engine.SearchByName(searchstring); }

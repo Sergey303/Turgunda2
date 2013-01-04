@@ -177,13 +177,13 @@
     <Content Include="Views\Home\Search.cshtml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AdapterMongo\AdapterMongo.csproj">
-      <Project>{2E088609-1E5F-4257-A15F-A72BCACE37D0}</Project>
-      <Name>AdapterMongo</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CassetteKernel\CassetteKernel.csproj">
       <Project>{49CB6E7F-AC7E-4331-A8C5-D9CE108D2A98}</Project>
       <Name>CassetteKernel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\EngineRDB\EngineRDB.csproj">
+      <Project>{1B228EF6-2911-415E-842F-85457F6A846D}</Project>
+      <Name>EngineRDB</Name>
     </ProjectReference>
     <ProjectReference Include="..\sema2012m\sema2012m.csproj">
       <Project>{01975281-0445-4C25-9E68-2518BE52D855}</Project>

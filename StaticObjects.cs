@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Xml.Linq;
+using System.Data.Common;
+using System.Reflection;
 
 namespace Turgunda2
 {
@@ -11,22 +13,78 @@ namespace Turgunda2
         private static bool _initiated = false;
         public static bool Initiated { get { return _initiated; } }
         private static string _path;
-        private static sema2012m.IAdapter adapter;
+        //private static sema2012m.IAdapter adapter;
+        private static sema2012m.Engine engine = null;
 
         public static void Init() { Init(_path); }
         public static void Init(string path)
         {
+            // Выявление пути к корневой директории приложения
             if (string.IsNullOrEmpty(path)) return;
             char c = path[path.Length-1];
             _path = path + (c=='/' || c=='\\' ? "" : "/");
+            // Инициирование системного лога проекта Тургунда
             InitTurlog(path);
-
-            adapter = new AdapterMongo.DbEntry();
-
-            XElement xconfig = XElement.Load(path + "config.xml");
-            var dbname_att = xconfig.Element("database").Attribute("dbname");
-            if (dbname_att != null) adapter.SetDbName(dbname_att.Value);
             turlog("Turgunda initiating... path=" + path);
+
+            // Чтение конфигуратора
+            XElement xconfig = XElement.Load(path + "config.xml");
+            // Определение имени базы данных (или графа), СУБД и connectionstring
+            string dbname = "turgunda2"; // Значение по умолчанию
+            string dbms = "sqlite"; // Значение по умолчанию
+            string connectionstring = "Data Source=" + _path + dbname + ".db3";
+            // попытка прочитать эти значения из конфигуратора
+            bool config_params_ok = false;
+            var database = xconfig.Element("database");
+            if (database != null) dbname = database.Attribute("dbname").Value;
+            var cs_att = database.Attribute("connectionstring");
+            if (cs_att != null) 
+            {
+                string cs_string = cs_att.Value;
+                int pos = cs_string.IndexOf(':');
+                if (pos != -1)
+                {
+                    dbms = cs_string.Substring(0, pos);
+                    connectionstring = cs_string.Substring(pos + 1);
+                    config_params_ok = true;
+                }
+            }
+            if (!config_params_ok) turlog("Не удалось в конфигураторе прочитать правильный элемент database. Используется параметры по умолчанию.");
+
+            // Зафиксируем адаптер соответствующей СУБД
+            string dataprovider = "System.Data.SQLite";
+            string engineTypeName = null;
+            if (dbms == "sqlite")
+            {
+                dataprovider = "System.Data.SQLite";
+                engineTypeName = "sema2012m.EngineRDB";
+            }
+            else if (dbms == "mysql")
+            {
+                dataprovider = "MySql.Data.MySqlClient";
+                engineTypeName = "sema2012m.EngineRDB";
+            }
+            else if (dbms == "mssql")
+            {
+                dataprovider = "System.Data.SqlClient";
+                engineTypeName = "sema2012m.EngineRDB";
+            }
+            DbProviderFactory factory = DbProviderFactories.GetFactory(dataprovider);
+            DbConnection connection = factory.CreateConnection();
+            connection.ConnectionString = connectionstring;
+
+            // Это правильно только для использования RDB, для других адаптеров надо что-то другое
+            Assembly myAssembly = Assembly.LoadFrom(_path + "bin/" +
+                (engineTypeName == "sema2012m.EngineRDB" ? "EngineRDB.dll" :
+                (""))
+                );
+            Type myType = myAssembly.GetType(engineTypeName);
+
+            Type ttype = myType; //Type.GetType(engineTypeName);
+            engine = (sema2012m.Engine)Activator.CreateInstance(ttype, new object[] { dbms, connection });
+
+
+            // Присоединимся к кассетам через список из конфигуратора 
             try
             {
                 CassetteKernel.CassettesConnection.ConnectToCassettes(xconfig.Elements("LoadCassette"),
@@ -37,62 +95,28 @@ namespace Turgunda2
                 turlog("Error while Turgunda initiating: " + ex.Message);
                 return;
             }
-            // Загрузка профиля
+            // Загрузка данных, если такая потребность имеется
+            //if (adapter.NeedToLoad) LoadFromCassettesExpress(s=>turlog(s), s=>turlog(s)); // надо сделать раздельные логи
+
+            // Загрузка профиля и онтологии
             XElement appProfile = XElement.Load(path + "ApplicationProfile.xml");
             Turgunda2.Models.Common.formats = appProfile.Element("formats");
-            XElement ontology = XElement.Load(path + "ontology_iis-v10-doc_ruen.xml");
+            XElement ontology = XElement.Load(path + "PublicuemCommon/ontology_iis-v10-doc_ruen.xml");
             Turgunda2.Models.Common.LoadOntNamesFromOntology(ontology);
 
             turlog("Turgunda initiated");
         }
 
-        public static IEnumerable<XElement> SearchByName(string searchstring) { return adapter.SearchByName(searchstring); }
-        public static string GetType(string id) { return adapter.GetType(id); }
-        public static XElement GetItemById(string id, XElement format) { return adapter.GetItemById(id, format); }
+        // Быстрая загрузка данных 
+        public static void LoadFromCassettesExpress(sema2012m.LogLine Protocol, sema2012m.LogLine DbConvertErrors)
+        {
+            var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().Select(d => d.filePath).ToArray();
+            engine.LoadFromCassettesExpress(fogfilearr, Protocol, DbConvertErrors);
+        }
 
-        //public static void LoadFromCassettes()
-        //{
-        //    sema2012m.DbEntry.InitiateDb();
-        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-        //    {
-        //        var xdb = XElement.Load(dbfile);
-        //        sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
-        //    }
-        //}
-        //public static void CheckDatabase()
-        //{
-        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-        //    {
-        //        var xdb = XElement.Load(dbfile);
-        //        sema2012m.DbEntry.CheckXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()), turlog);
-        //    }
-        //}
-        //public static void LoadFromCassettesExpress()
-        //{
-        //    Console.WriteLine("InitiateDb starts");
-        //    sema2012m.DbEntry.InitiateDb();
-        //    Console.WriteLine("InitiateDb ok. Scan cassettes starts");
-        //    var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().ToArray();
-        //    Dictionary<string, sema2012m.ResInfo> table_ri = new Dictionary<string, sema2012m.ResInfo>();
-        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-        //    {
-        //        var xdb = XElement.Load(dbfile);
-        //        var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
-        //        //sema2012m.DbEntry.LoadXFlow(sema2012m.DbEntry.ConvertXFlow(xdb.Elements()));
-        //        sema2012m.PrepareRiTable.AppendXflowToRiTable(table_ri,
-        //            xdb_converted, dbfile, s => Console.WriteLine(s));
-        //    }
-        //    Console.WriteLine("Scan cassettes ok. Loading database starts");
-        //    foreach (string dbfile in fogfilearr.Select(x => x.filePath))
-        //    {
-        //        Console.WriteLine("Loading from " + dbfile);
-        //        var xdb = XElement.Load(dbfile);
-        //        var xdb_converted = sema2012m.DbEntry.ConvertXFlow(xdb.Elements()).ToArray();
-        //        sema2012m.PrepareRiTable.LoadXFlowUsingRiTable(xdb_converted, table_ri);
-        //    }
-        //}
+        public static IEnumerable<XElement> SearchByName(string searchstring) { return engine.SearchByName(searchstring); }
+        //public static string GetType(string id) { return adapter.GetType(id); }
+        public static XElement GetItemById(string id, XElement format) { return engine.GetItemById(id, format); }
 
         // Log - area
         private static object locker = new object();

@@ -2,14 +2,12 @@
 @model Turgunda2.Models.PortraitModel
 @{
     if (Model == null || Model.xresult == null) { return; }
-    var maintable = Model.xresult.Element("table");
-    XElement tab = null;
 }
 
 <div>@Model.typelabel</div>
 @if (Model.uri == null)
 {
-<h2 style="color: #5c87b2;">@Model.name</h2>
+<!--h2 style="color: #5c87b2;">@Model.name</h2-->
 }
 else
 {
@@ -17,53 +15,16 @@ else
     <img src="@url" />
 }
 
-@if (maintable != null)
-{
-<div>@Html.Raw(maintable.ToString())</div>
-}
-
 <table>
-@foreach (var inverse in Model.xresult.Elements("inverse"))
-{
-    string prop = inverse.Attribute("prop").Value;
-    var label = inverse.Element("label");
-    if (label != null) { prop = label.Value; }
-    <tr valign="top">
-        <td>@prop</td>
-        <td>
-    @foreach (var rec in inverse.Elements("record"))
-    {
-        var labe = rec.Element("label");
-        if (labe != null)
+    <tr>
+        @foreach (XElement c in @Model.xresult.Element("r").Elements("c"))
         {
-            <div>@labe.Value</div>
+            <td class="d">@c.Value</td>
         }
-        @Html.Raw(rec.Element("table").ToString())
-        @*
-        tab = new XElement("table",
-            rec.Element("table").Elements().Select(thtb => 
-                new XElement(thtb.Name, thtb.Attributes(), thtb.Elements().Select(row => new XElement(row.Name,
-                    row.Elements().Select(tdh => new XElement(tdh.Name, tdh.Attributes(),
-                        tdh.Nodes().Select(nd => {
-                            if (nd.NodeType == System.Xml.XmlNodeType.Element)
-                            {
-                                return new XElement(((XElement)nd).Name);
-                            }
-                            else if (nd.NodeType == System.Xml.XmlNodeType.Text)
-                            {
-                                return new XElement("span", new XText(((XText)nd).Value));
-                            }
-                            return (XElement)null;
-                        })))
-                    )))));
-        tab = rec;
-        *@
-    }
-        </td>
     </tr>
-}
 </table>
 
+<pre>@Model.xresult.ToString()</pre>
 
 @if (Model.look != null)
 {

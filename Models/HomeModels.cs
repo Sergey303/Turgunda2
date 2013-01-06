@@ -53,14 +53,6 @@ namespace Turgunda2.Models
             return et_state.Value;
         }
 
-        //public static string GetNameFromRecord(sema2012m.EntityInfo record)
-        //{
-        //    return record.RecordElements
-        //        .Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
-        //        .OrderByDescending(re => re.Lang) // Это чтобы получить русский вариант, в будущем, это надо изменить
-        //        .Select(re => re.Value)
-        //        .FirstOrDefault();
-        //}
     }
     public class PortraitModel
     {
@@ -70,78 +62,153 @@ namespace Turgunda2.Models
         public string name;
         public string uri = null;
         public XElement xresult;
-        public XElement xinverse;
         public XElement look;
         public string message;
         public PortraitModel(string id)
         {
             DateTime tt0 = DateTime.Now;
-            // Сначала, базовые поля
-            XElement f = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
-            //var record = sema2012m.DbEntry.GetRecordById(id);
-            XElement xrecord = StaticObjects.GetItemById(id, f);
-            //if (record == null) return;
-            if (xrecord == null) return;
-            //this.id = record.LastId;
-            this.id = xrecord.Attribute("id").Value;
-            //string type_id = record.TypeId;
-            string type_id = xrecord.Attribute("type").Value;
+            // Сначала, базовые поля. Определим, сделав запрос с очень простым форматом
+            XElement f_simple = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
+            XElement xtree0 = StaticObjects.GetItemById(id, f_simple);
+            if (xtree0 == null) return; // записи может и не быть
+            // заполним базовые поля
+            this.id = xtree0.Attribute("id").Value;
+            string type_id = xtree0.Attribute("type").Value;
             this.type_id = type_id;
             this.typelabel = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.typelabel == null) this.typelabel = type_id;
-            //this.name = Common.GetNameFromRecord(record);
-            this.name = xrecord.Elements("field").First(fi => fi.Attribute("prop").Value == ONames.p_name).Value;
-            // Теперь таблицы
-            XElement format = Common.formats.Elements("record")
-                .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == this.type_id);
-            if (format == null) format = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
+            XElement field_name = xtree0.Elements("field")
+                .Where(fi => fi.Attribute("prop").Value == ONames.p_name)
+                .OrderBy(fi => { 
+                    XAttribute lang_att = fi.Attribute(ONames.xmllang);
+                    return lang_att==null?"" : lang_att.Value;
+                })
+                .FirstOrDefault();
+            this.name = field_name == null ? "Noname" : field_name.Value;
             
-            //if (type_id == ONames.t_person) format = Common.format_p;
-            //else if (type_id == ONames.FOG + "collection") format = Common.format_с_list;
-            XElement xres = StaticObjects.GetItemById(id, format);
+            // Теперь установим нужный формат
+            XElement xformat = Common.formats.Elements("record")
+                .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == this.type_id);
+            if (xformat == null) xformat = f_simple;
+            
+            XElement xtree = StaticObjects.GetItemById(id, xformat);
             // Надо попробовать получить uri
             if (type_id == ONames.FOG + "photo-doc")
             {
-                var uri_el = GetUri(xres);
+                var uri_el = GetUri(xtree);
                 if (uri_el != null) uri = uri_el.Value;
             }
 
-            var resultset = new XElement[] { xres };
-            XElement table_main = ConstructTable(format, resultset);
+            this.xresult = ConvertToResultStructure(xformat, xtree);
 
-            XElement xrec = new XElement("record", 
-                //new XAttribute("id", format.Attribute("id").Value),
-                //new XAttribute("type", format.Attribute("type").Value),
-                table_main);
-            foreach (var finv in format.Elements("inverse").Where(i => i.Attribute("visible")==null || i.Attribute("visible").Value != "none"))
-            {
-                string prop = finv.Attribute("prop").Value;
-                XElement label = finv.Element("label");
-                if (label == null && Common.OntNames.ContainsKey(prop)) label = new XElement("label", Common.OntNames[prop]); 
-                XElement inverse = new XElement("inverse", new XAttribute("prop", prop),
-                    label == null ? null : new XElement(label));
-                var inverse_p_set = xres.Elements("inverse")
-                    .Where(inv => inv.Attribute("prop").Value == finv.Attribute("prop").Value).ToArray();
-                foreach (var frec in finv.Elements("record"))
-                {
-                    XElement rlabel = frec.Element("label");
-                    XAttribute t_att = frec.Attribute("type");
-                    var record_t_set = inverse_p_set.Elements("record")
-                        .Where(re => t_att == null ? true : re.Attribute("type").Value == t_att.Value)
-                        .ToArray();
-                    XElement tab = ConstructTable(frec, record_t_set);
-                    inverse.Add(new XElement("record",
-                        //new XAttribute(rec.Attribute("id")),
-                        t_att==null ? null : new XAttribute(frec.Attribute("type")),
-                        rlabel==null ? null : new XElement("label", rlabel.Value),
-                        tab));
-                }
-                xrec.Add(inverse);
-            }
+
             this.message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
-                
-            this.xresult = xrec;
             //this.look = xrecord;
+        }
+
+        private static XElement ConvertToResultStructure(XElement xformat, XElement xtree)
+        {
+            XElement result = new XElement("Result",
+                new XElement("header", ScanForFields(xformat)),
+                GetRecordRow(xtree, xformat),
+                null);
+            foreach (var f_inv in xformat.Elements("inverse"))
+            {
+                string prop = f_inv.Attribute("prop").Value;
+                var queryForInverse = xtree.Elements("inverse").Where(el => el.Attribute("prop").Value == prop).ToArray();
+                XElement ip = new XElement("ip", new XAttribute("prop", prop));
+                foreach (var f_rec in f_inv.Elements("record"))
+                {
+                    string recType = f_rec.Attribute("type").Value;
+                    var queryForRecords = queryForInverse.Select(inve => inve.Element("record"))
+                        .Where(re => re != null && re.Attribute("type").Value == recType).ToArray();
+                    XElement ir = new XElement("ir", new XAttribute("type", recType));
+                    ip.Add(ir);
+                    foreach (var v_rec in queryForRecords)
+                    {
+                        ir.Add(GetRecordRow(v_rec, f_rec));
+                    }
+                }
+                result.Add(ip);
+            }
+            return result;
+        }
+        // Статический метод: рекурсивное сканирование айтема с вычислением всех определенных форматом записи полей
+        // Возвращает таблицу <r id="ид.записи" type="ид.типа"><c>значение</c><c>...</c>...<r>..</r>...</r>
+        // где c стоят на позициях полей, а r - на позициях прямых отношений
+        public static XElement GetRecordRow(XElement item, XElement frecord)
+        {
+            IEnumerable<XElement> fieldsAndDirects = item.Elements().Where(el => el.Name == "field" || el.Name == "direct");
+            XElement r = new XElement("r",
+                new XAttribute("id", item.Attribute("id").Value),
+                new XAttribute("type", item.Attribute("type").Value),
+                ScanForFieldValues(fieldsAndDirects, frecord),
+                null);
+            return r;
+        }
+        public static IEnumerable<XElement> ScanForFieldValues(IEnumerable<XElement> fieldsAndDirects, XElement frecord)
+        {
+            foreach (var f_el in frecord.Elements())
+            {
+                if (f_el.Name == "field")
+                {
+                    string prop = f_el.Attribute("prop").Value;
+                    // Найдем множество полей, имеющееся в "россыпи"
+                    var field = fieldsAndDirects.Where(fd => fd.Name == "field")
+                        .Where(f => f.Attribute("prop").Value == prop)
+                        .FirstOrDefault();
+                    yield return new XElement("c", field == null ? null : field.Value);
+                }
+                else if (f_el.Name == "direct")
+                {
+                    string prop = f_el.Attribute("prop").Value;
+                    // Найдем один, если есть, элемент direct, удовлетворяющий условиям 
+                    var direct = fieldsAndDirects.Where(fd => fd.Name == "direct")
+                        .FirstOrDefault(d => d.Attribute("prop").Value == prop);
+                    var record = direct == null ? null : direct.Element("record");
+                    if (direct == null || record == null) yield return new XElement("r");
+                    else
+                    {
+                        //var query = record.Elements().Where(fdi => fdi.Name == "field" || fdi.Name == "direct");
+                        //foreach (var el1 in ScanForFieldValues(query, f_el.Element("record"))) yield return el1;
+                        //yield return new XElement("r",
+                        //    new XAttribute("id", record.Attribute("id").Value),
+                        //    new XAttribute("type", record.Attribute("type").Value),
+                        //    ScanForFieldValues(query, f_el.Element("record")));
+                        XElement f_rec = f_el.Element("record");
+                        if (frecord != null) yield return GetRecordRow(record, f_rec); // не знаю зачем проверка
+                    }
+                }
+            }
+        }
+        // Статический метод: рекурсивное сканирование с выявлением всех определенных форматом записи полей
+        public static IEnumerable<XElement> ScanForFields(XElement frecord)
+        {
+            foreach (var el in frecord.Elements())
+            {
+                if (el.Name == "field") yield return GetLabel(el);
+                else if (el.Name == "direct")
+                {
+                    yield return new XElement("d", new XAttribute("prop", el.Attribute("prop").Value),
+                        new XElement("label", "LABEL"),
+                        ScanForFields(el.Element("record")));
+                }
+            }
+        }
+        private static XElement GetLabel(XElement el)
+        {
+            XAttribute t = el.Attribute("type");
+            XAttribute p = el.Attribute("prop");
+            string label = "label";
+            if (!Common.OntNames.TryGetValue(p.Value, out label))
+            {
+                label = p.Value;
+            }
+            return new XElement("h",
+                p == null ? new XAttribute("prop", "nop") : new XAttribute("prop", p.Value),
+                t == null ? null : new XAttribute("valueType", t.Value),
+                label,
+                null);
         }
 
         private static XElement ConstructTable(XElement format, IEnumerable<XElement> resultset)
@@ -174,7 +241,7 @@ namespace Turgunda2.Models
                                 var enum_type_att = el.Attribute("type");
                                 var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
                                 return new XElement("td",
-                                    new XAttribute("style", "font-weight:bold; color:Black;"),
+                                    new XAttribute("class", "d"),
                                     xvalue == null ? "" :
                                         (enum_type_att == null ? xvalue.Value : Common.GetEnumStateLabel(enum_type_att.Value, xvalue.Value)));
                             }
@@ -211,9 +278,9 @@ namespace Turgunda2.Models
             return table;
         }
 
-        private static XElement GetUri(XElement re)
+        private static XElement GetUri(XElement xtree)
         {
-            var uri = re.Elements("inverse")
+            var uri = xtree.Elements("inverse")
                 .Where(i => i.Attribute("prop").Value == ONames.p_fordocument)
                 .Select(i => i.Elements("record")
                     .Where(r => r.Attribute("type").Value == ONames.FOG + "FileStore")

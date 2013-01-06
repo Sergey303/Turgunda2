@@ -16,9 +16,12 @@ body {
     padding: 0;
     color: #696969;
 }
-#data 
+.d 
 {
+    font-family:Arial;
+    font-size:larger;
     font-weight:bold;
+    color:Black;
 }
 
 a:link {

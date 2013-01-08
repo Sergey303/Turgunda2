@@ -4,6 +4,60 @@
     if (Model == null || Model.xresult == null) { return; }
 }
 
+@helper HTable(XElement container)
+{
+<table>
+    <tr>
+    @foreach (XElement h in container.Element("header").Elements())
+    {
+        <th>
+        @if (h.Name == "h")
+        { @h.Value }
+        else
+        { @h.Element("label").Value } 
+        </th>
+    }
+    </tr>
+    @foreach (XElement r in container.Elements("r"))
+    {
+        
+    <tr>
+        @foreach (XElement cr in r.Elements()) 
+        {
+            if (cr.Name == "c")
+            { 
+                <td class="d">@cr.Value</td> 
+            }
+            else
+            {
+                XAttribute d_att = cr.Attribute("id");
+                string d_id = d_att==null? "" : d_att.Value;
+                var qu = cr.Elements()
+                    .Select(c => { return new XText(c.Value); });
+                <td>
+                @foreach (XElement c in cr.Elements()) 
+                {
+                    XAttribute prop_att = c.Attribute("prop");
+                    if (prop_att != null && prop_att.Value == sema2012m.ONames.p_name) 
+                    {
+                        <a href="?id=@d_id">@c.Value</a>
+                    }
+                    else
+                    {
+                        <span>@c.Value</span>
+                    }
+                } 
+                </td>
+                //string d_name = c.Value;
+                //<td><a href="?id=@d_id">@d_name</a></td>
+            }
+        }
+    </tr>
+    }
+</table>  
+}
+
+<!-- ================= Начало построения ================= -->
 <div>@Model.typelabel</div>
 @if (Model.uri == null)
 {
@@ -15,17 +69,76 @@ else
     <img src="@url" />
 }
 
+@HTable(Model.xresult)
 <table>
-    <tr>
-        @foreach (XElement c in @Model.xresult.Element("r").Elements("c"))
+@foreach (XElement ip in @Model.xresult.Elements("ip"))
+{
+    if (ip.Element("ir").Elements("r").Count() == 0) { continue; }
+    <tr valign="top">
+        <td>@ip.Element("label").Value</td>
+        <td>
+        @foreach (XElement ir in ip.Elements("ir"))
         {
-            <td class="d">@c.Value</td>
+            if (ir.Elements("r").Count() == 0) { continue; }
+            XAttribute view_att = ir.Attribute("view");
+            <div>@ir.Element("label").Value</div>
+            if (view_att != null && view_att.Value == "largeicons")
+            {
+                foreach (XElement r in ir.Elements("r")) 
+                {
+                    string url="";
+                    string src="";
+                    List<string> parts = new List<string>();
+                    foreach (var fr in r.Elements())
+                    {
+                        if (fr.Name == "c")
+                        {
+                            parts.Add(fr.Value);
+                        }
+                        else if (fr.Name == "r")
+                        {
+                            var id_att = fr.Attribute("id");
+                            var ty_att = fr.Attribute("type");
+                            if (id_att == null || ty_att == null) { continue; }
+                            string id = id_att.Value;
+                            string ty = ty_att.Value;
+                            XAttribute uri_att = fr.Attribute("uri");
+                            if (uri_att != null) 
+                            {
+                                src = Url.Content("~/Docs/GetPhoto?s=small&u=" + uri_att.Value);
+                                url = "?id=" + id;
+                            }
+                            parts.AddRange(fr.Elements("c").Select(c => c.Value));
+                        }    
+                    }
+                <div class="brick">
+                <div>
+                <a href="@url">
+                    <img src="@src" />
+                </a>
+                </div>
+                @if (parts.Count() > 0) 
+                {
+                <div style="font-size:smaller;">@parts.Aggregate((sum, part) => sum + " | " + part)</div>
+                }
+                </div>
+
+                    
+                }
+            }
+            else
+            {
+                @HTable(ir)
+            }
         }
+        </td>
     </tr>
+}
 </table>
 
+@*
 <pre>@Model.xresult.ToString()</pre>
-
+*@
 @if (Model.look != null)
 {
 <pre>@Model.look.ToString()</pre>

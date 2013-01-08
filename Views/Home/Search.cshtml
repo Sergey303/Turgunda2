@@ -1,7 +1,6 @@
 ﻿@using System.Xml.Linq
 @model Turgunda2.Models.SearchModel
            
-
 <div>@Model.message</div>
 @{
     var results = Model.Results;
@@ -12,5 +11,9 @@
             <span>@r.type_name</span>
             <a href="@url">@r.value</a>
         </div>
+    }
+    if (User.IsInRole("user") && Model.type != null) 
+    {
+        <div>[@Html.ActionLink("нов.", "NewRecord", new { name = Model.searchstring, type = Model.type })]</div>
     }
 }

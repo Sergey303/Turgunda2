@@ -98,6 +98,10 @@ namespace Turgunda2.Models
                 var uri_el = GetUri(xtree);
                 if (uri_el != null) uri = uri_el.Value;
             }
+            // Добавим отца
+            xtree.Add(new XElement("direct", new XAttribute("prop", ONames.FOG + "father"),
+                new XElement("record", new XAttribute("id", "piu_200809051508"), new XAttribute("type", ONames.FOG + "person"),
+                    new XElement("field", new XAttribute("prop", ONames.FOG + "name"), "Марчук Гурий Иванович"))));
 
             this.xresult = ConvertToResultStructure(xformat, xtree);
 
@@ -116,13 +120,18 @@ namespace Turgunda2.Models
             {
                 string prop = f_inv.Attribute("prop").Value;
                 var queryForInverse = xtree.Elements("inverse").Where(el => el.Attribute("prop").Value == prop).ToArray();
-                XElement ip = new XElement("ip", new XAttribute("prop", prop));
+                XElement ip = new XElement("ip", new XAttribute("prop", prop), new XElement("label", Common.OntNames[prop]));
                 foreach (var f_rec in f_inv.Elements("record"))
                 {
+                    XAttribute view_att = f_rec.Attribute("view");
                     string recType = f_rec.Attribute("type").Value;
                     var queryForRecords = queryForInverse.Select(inve => inve.Element("record"))
                         .Where(re => re != null && re.Attribute("type").Value == recType).ToArray();
-                    XElement ir = new XElement("ir", new XAttribute("type", recType));
+                    XElement ir = new XElement("ir", 
+                        new XAttribute("type", recType),
+                        view_att==null?null: new XAttribute(view_att),
+                        new XElement("label", Common.OntNames[recType]),
+                        new XElement("header", ScanForFields(f_rec)));
                     ip.Add(ir);
                     foreach (var v_rec in queryForRecords)
                     {
@@ -139,9 +148,16 @@ namespace Turgunda2.Models
         public static XElement GetRecordRow(XElement item, XElement frecord)
         {
             IEnumerable<XElement> fieldsAndDirects = item.Elements().Where(el => el.Name == "field" || el.Name == "direct");
+            var inv_props_atts = frecord.Elements("inverse").Where(fel => fel.Attribute("attname") != null)
+                //.Select(fel => new { prop = fel.Attribute("prop").Value, attname = fel.Attribute("attname").Value })
+                .ToDictionary(fel => fel.Attribute("prop").Value, fel => fel.Attribute("attname").Value);
+            IEnumerable<XAttribute> atts = item.Elements("inverse")
+                .Where(el => inv_props_atts.ContainsKey(el.Attribute("prop").Value))
+                .Select(el => new XAttribute(XName.Get(inv_props_atts[el.Attribute("prop").Value]), el.Value));
             XElement r = new XElement("r",
                 new XAttribute("id", item.Attribute("id").Value),
                 new XAttribute("type", item.Attribute("type").Value),
+                atts,
                 ScanForFieldValues(fieldsAndDirects, frecord),
                 null);
             return r;
@@ -157,7 +173,15 @@ namespace Turgunda2.Models
                     var field = fieldsAndDirects.Where(fd => fd.Name == "field")
                         .Where(f => f.Attribute("prop").Value == prop)
                         .FirstOrDefault();
-                    yield return new XElement("c", field == null ? null : field.Value);
+                    XAttribute pr_att = prop == ONames.p_name ? new XAttribute("prop", prop) : null;
+                    if (field == null) yield return new XElement("c", pr_att);
+                    else
+                    {
+                        XAttribute valueTypeAtt = f_el.Attribute("type");
+                        string value = field.Value;
+                        if (valueTypeAtt != null) value = Common.GetEnumStateLabel(valueTypeAtt.Value, value);
+                        yield return new XElement("c", pr_att, value);
+                    }
                 }
                 else if (f_el.Name == "direct")
                 {
@@ -169,12 +193,6 @@ namespace Turgunda2.Models
                     if (direct == null || record == null) yield return new XElement("r");
                     else
                     {
-                        //var query = record.Elements().Where(fdi => fdi.Name == "field" || fdi.Name == "direct");
-                        //foreach (var el1 in ScanForFieldValues(query, f_el.Element("record"))) yield return el1;
-                        //yield return new XElement("r",
-                        //    new XAttribute("id", record.Attribute("id").Value),
-                        //    new XAttribute("type", record.Attribute("type").Value),
-                        //    ScanForFieldValues(query, f_el.Element("record")));
                         XElement f_rec = f_el.Element("record");
                         if (frecord != null) yield return GetRecordRow(record, f_rec); // не знаю зачем проверка
                     }
@@ -190,7 +208,7 @@ namespace Turgunda2.Models
                 else if (el.Name == "direct")
                 {
                     yield return new XElement("d", new XAttribute("prop", el.Attribute("prop").Value),
-                        new XElement("label", "LABEL"),
+                        new XElement("label", Common.OntNames[el.Attribute("prop").Value]),
                         ScanForFields(el.Element("record")));
                 }
             }
@@ -211,72 +229,6 @@ namespace Turgunda2.Models
                 null);
         }
 
-        private static XElement ConstructTable(XElement format, IEnumerable<XElement> resultset)
-        {
-
-            XElement table = new XElement("table",
-                new XElement("thead",
-                    new XElement("tr",
-                        format.Elements().Where(el => 
-                            (el.Name == "field" || el.Name == "direct") && 
-                            (el.Attribute("visible")==null || el.Attribute("visible").Value != "none"))
-                        .Select(el =>
-                        {
-                            string prop = el.Attribute("prop").Value;
-                            XElement label = el.Element("label");
-                            string columnname = label != null ? label.Value :
-                                (Common.OntNames.ContainsKey(prop) ? Common.OntNames[prop] : prop);
-                            return new XElement("th", columnname);
-                        }))),
-                new XElement("tbody",
-                    resultset.Select(xr => new XElement("tr",
-                        format.Elements().Where(el =>
-                            (el.Name == "field" || el.Name == "direct") &&
-                            (el.Attribute("visible") == null || el.Attribute("visible").Value != "none"))
-                        .Select(el =>
-                        {
-                            string prop = el.Attribute("prop").Value;
-                            if (el.Name == "field")
-                            {
-                                var enum_type_att = el.Attribute("type");
-                                var xvalue = xr.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == prop);
-                                return new XElement("td",
-                                    new XAttribute("class", "d"),
-                                    xvalue == null ? "" :
-                                        (enum_type_att == null ? xvalue.Value : Common.GetEnumStateLabel(enum_type_att.Value, xvalue.Value)));
-                            }
-                            else
-                            {
-                                var dir = xr.Elements("direct").FirstOrDefault(d => d.Attribute("prop").Value == prop);
-                                if (dir == null) return new XElement("td");
-                                var re = dir.Element("record");
-                                if (re == null) return new XElement("td");
-                                string re_id = re.Attribute("id").Value;
-                                XElement name_el = re.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == ONames.p_name);
-                                XElement ret_element = new XElement("a", new XAttribute("href", "?id=" + re_id),
-                                        name_el == null ? "link" : name_el.Value);
-                                XAttribute t_att = re.Attribute("type");
-                                string t_id = t_att == null ? null : t_att.Value;
-                                if (t_id == ONames.t_photodoc)
-                                {
-                                    var uri = GetUri(re);
-                                    if (uri != null)
-                                    {
-                                        ret_element = new XElement("div", //new XAttribute("class", "brick"),
-                                            new XElement("div",
-                                                new XElement("a", new XAttribute("href", "?id=" + re_id),
-                                                    new XElement("img", new XAttribute("src", "../Docs/GetPhoto?s=small&u="+ uri.Value)))),
-                                            new XElement("div",
-                                                new XElement("span", name_el == null ? "link" : name_el.Value)),
-                                            null);
-                                    }
-                                }
-                                return new XElement("td", ret_element);
-                            }
-                        }))),
-                    null));
-            return table;
-        }
 
         private static XElement GetUri(XElement xtree)
         {
@@ -304,10 +256,14 @@ namespace Turgunda2.Models
         private SearchResult[] _results;
         public SearchResult[] Results { get { return _results; } }
         public string message;
+        public string searchstring;
+        public string type;
         public SearchModel(string searchstring, string type)
         {
             DateTime tt0 = DateTime.Now;
-            //var sr = StaticObjects.SearchByName(searchstring).ToArray();
+            this.searchstring = searchstring;
+            type = "http://fogid.net/o/person"; // для отладки
+            this.type = type;
             _results = StaticObjects.SearchByName(searchstring)
                 .Select(xres =>
                 {

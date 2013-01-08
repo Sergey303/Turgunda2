@@ -65,5 +65,13 @@ namespace Turgunda2.Controllers
         {
             return View();
         }
+        //
+        // ==================== Редактирование данных =====================
+        //
+        public ActionResult NewRecord(string searchstring, string type)
+        {
+
+            return RedirectToAction("Portrait", "Home", new { id = "" });
+        }
     }
 }

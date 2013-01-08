@@ -114,11 +114,52 @@ namespace Turgunda2
             engine.LoadFromCassettesExpress(fogfilearr, turlog, turlog);
         }
 
+        // =========== Основные процедуры ==========
         public static IEnumerable<XElement> SearchByName(string searchstring) { return engine.SearchByName(searchstring); }
         //public static string GetType(string id) { return adapter.GetType(id); }
         public static XElement GetItemById(string id, XElement format) { return engine.GetItemById(id, format); }
 
-        // Log - area
+        // =========== Редактирование ==========
+        // Возвращает идентификатор созданного айтема или null
+        public static string CreateNewItem(string name, string type, string username)
+        {
+            if (type == null || string.IsNullOrEmpty(name)) return null;
+            var docinfo = CassetteKernel.CassettesConnection.docsInfo
+                .Select(pair => pair.Value)
+                .FirstOrDefault(di => di.isEditable && di.owner == username);
+            if (docinfo == null) return null;
+            int pos = type.LastIndexOfAny(new char[] {'/', '#'});
+            if (pos == -1) return null;
+            string id = docinfo.NextId();
+            XElement xrecord = new XElement(XName.Get(type.Substring(pos + 1), type.Substring(0, pos + 1)),
+                new XAttribute(sema2012m.ONames.rdfabout, id),
+                new XElement(sema2012m.ONames.p_name, name));
+            // Внедрить и сохранить
+            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("s")));
+            docinfo.GetRoot().Add(xrecord);
+            docinfo.isChanged = true;
+            docinfo.Save();
+
+            // Добавить служебные поля
+            xrecord.Add(new XAttribute("dbid", docinfo.dbId));
+            xrecord.Add(new XAttribute("sender", docinfo.owner));
+            // Запомнить действие в логе изменений
+            //changelog(xrecord.ToString()); // ========== СДЕЛАТЬ!
+            
+            return null;
+        }
+        //public static string CreateSysObject(string type, string name, string username)
+        //{
+        //    var docinfo = getfilelist().FirstOrDefault(di => di.isEditable && di.owner == username);
+        //    if (docinfo == null) return null;
+        //    string id = docinfo.NextId();
+        //    InsertXRecord(new XElement(type, new XAttribute(ONames.rdfabout, id),
+        //        new XElement("name", new XAttribute(ONames.xmllang, "ru"), name)
+        //        ), false, docinfo);
+        //    return id;
+        //}
+
+        // ====== Вспомогательные процедуры Log - area
         private static object locker = new object();
         private static sema2012m.LogLine turlog = s => { };
         private static void InitTurlog(string path)

@@ -83,19 +83,19 @@
 					<field prop="http://fogid.net/o/role"/>
 					<direct prop="http://fogid.net/o/in-org">
 						<record type="http://fogid.net/o/org-sys">
-                            <field prop="http://fogid.net/o/name"/>
-                            <field prop="http://fogid.net/o/org-classification"/>
+							<field prop="http://fogid.net/o/org-classification" type="http://fogid.net/o/org-classificator"/>
+							<field prop="http://fogid.net/o/name"/>
                         </record>
 					</direct>
 				</record>
 			</inverse>
 			<inverse prop="http://fogid.net/o/reflected">
-				<record type="http://fogid.net/o/reflection">
+				<record type="http://fogid.net/o/reflection" view="largeicons">
 					<direct prop="http://fogid.net/o/in-doc">
 						<record type="http://fogid.net/o/photo-doc">
 							<field prop="http://fogid.net/o/name"/>
 							<field prop="http://fogid.net/o/from-date"/>
-							<inverse prop="http://fogid.net/o/forDocument">
+							<inverse prop="http://fogid.net/o/forDocument" attname="uri">
 								<record type="http://fogid.net/o/FileStore">
 									<field prop="http://fogid.net/o/uri"/>
 								</record>
@@ -124,7 +124,7 @@
 			<inverse prop="http://fogid.net/o/in-org">
 				<record type="http://fogid.net/o/participation">
 					<field prop="http://fogid.net/o/role"/>
-					<field prop="http://fogid.net/o/role-classification"/>
+					<field prop="http://fogid.net/o/role-classification" type="http://fogid.net/o/role-classificator"/>
 					<field prop="http://fogid.net/o/from-date"/>
 					<field prop="http://fogid.net/o/to-date"/>
 					<direct prop="http://fogid.net/o/participant">

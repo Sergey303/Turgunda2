@@ -99,9 +99,9 @@ namespace Turgunda2.Models
                 if (uri_el != null) uri = uri_el.Value;
             }
             // Добавим отца
-            xtree.Add(new XElement("direct", new XAttribute("prop", ONames.FOG + "father"),
-                new XElement("record", new XAttribute("id", "piu_200809051508"), new XAttribute("type", ONames.FOG + "person"),
-                    new XElement("field", new XAttribute("prop", ONames.FOG + "name"), "Марчук Гурий Иванович"))));
+            //xtree.Add(new XElement("direct", new XAttribute("prop", ONames.FOG + "father"),
+            //    new XElement("record", new XAttribute("id", "piu_200809051508"), new XAttribute("type", ONames.FOG + "person"),
+            //        new XElement("field", new XAttribute("prop", ONames.FOG + "name"), "Марчук Гурий Иванович"))));
 
             this.xresult = ConvertToResultStructure(xformat, xtree);
 

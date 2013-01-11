@@ -14,6 +14,6 @@
     }
     if (User.IsInRole("user") && Model.type != null) 
     {
-        <div>[@Html.ActionLink("нов.", "NewRecord", new { name = Model.searchstring, type = Model.type })]</div>
+        <div>[@Html.ActionLink("нов.", "NewRecord", new { searchstring = Model.searchstring, type = Model.type })]</div>
     }
 }

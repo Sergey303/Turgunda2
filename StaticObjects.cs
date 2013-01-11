@@ -131,22 +131,26 @@ namespace Turgunda2
             int pos = type.LastIndexOfAny(new char[] {'/', '#'});
             if (pos == -1) return null;
             string id = docinfo.NextId();
-            XElement xrecord = new XElement(XName.Get(type.Substring(pos + 1), type.Substring(0, pos + 1)),
+            string t_local = type.Substring(pos + 1);
+            string t_ns = type.Substring(0, pos + 1);
+            XElement xrecord = new XElement(XName.Get("{" + t_ns + "}" + t_local),
                 new XAttribute(sema2012m.ONames.rdfabout, id),
-                new XElement(sema2012m.ONames.p_name, name));
+                new XElement(sema2012m.ONames.tag_name, name));
             // Внедрить и сохранить
-            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("s")));
-            docinfo.GetRoot().Add(xrecord);
+            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToString("u")));
+            docinfo.GetRoot().Add(new XElement(xrecord)); // Делаю клона и записываю в фог-документ
             docinfo.isChanged = true;
             docinfo.Save();
+
+            engine.ReceiveXCommand(xrecord);
 
             // Добавить служебные поля
             xrecord.Add(new XAttribute("dbid", docinfo.dbId));
             xrecord.Add(new XAttribute("sender", docinfo.owner));
-            // Запомнить действие в логе изменений
+            // Запомнить действие в логе изменений и синхронизовать(!)
             //changelog(xrecord.ToString()); // ========== СДЕЛАТЬ!
             
-            return null;
+            return id;
         }
         //public static string CreateSysObject(string type, string name, string username)
         //{

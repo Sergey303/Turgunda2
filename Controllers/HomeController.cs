@@ -70,8 +70,9 @@ namespace Turgunda2.Controllers
         //
         public ActionResult NewRecord(string searchstring, string type)
         {
-
-            return RedirectToAction("Portrait", "Home", new { id = "" });
+            if (type == null) type = "http://fogid.net/o/person";
+            string nid = StaticObjects.CreateNewItem(searchstring, type, User.Identity.Name);
+            return RedirectToAction("Portrait", "Home", new { id = nid });
         }
     }
 }

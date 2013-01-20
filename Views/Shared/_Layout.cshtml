@@ -33,18 +33,20 @@
         </tr>
         <tr valign="bottom">
             <td colspan="3">
+                <!--input type="text" style="width:50px;" /-->
                 <div style="vertical-align:bottom;">
 @using (Html.BeginForm("Search", "Home", FormMethod.Post, new { style = "margin:0;" }))
 {
-    @Html.TextBox("searchstring")
-    @*Html.DropDownList("type", Turgunda.Models.SearchModel.XFormats.Elements("record")
+    @Html.TextBox("searchstring", null, new { style = "width:300px;" })
+    var variants = Turgunda2.Models.Common.formats.Elements("record")
         .Select(r => new SelectListItem()
         {
             Value = r.Attribute("type").Value,
-            Text = Turgunda.Models.PortraitModel.OntologyLabel(r.Attribute("type").Value)
-        }),
-        new { style = "" })
-    *@
+            Text = Turgunda2.Models.Common.OntNames[r.Attribute("type").Value]
+        }).ToList();
+    variants.Insert(0, new SelectListItem() { Value = "", Text = "" });
+    @Html.DropDownList("type", variants, new { style = "font-size:small;" });
+    
     <input type="submit" value="искать" style="font-size:small;" />
 }
                 </div>

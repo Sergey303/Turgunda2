@@ -64,20 +64,22 @@ namespace Turgunda2.Models
         public XElement xresult;
         public XElement look;
         public string message;
+        // По идентификатору мы получаем 1) откорректированный идентификатор; 2) тип записи; 3) формат (раскрытия) записи
+        // Эту информацию дополняем меткой типа, пытаемся прочитать и зафиксировать имя записи и uri документного контента
         public PortraitModel(string id)
         {
             DateTime tt0 = DateTime.Now;
-            // Сначала, базовые поля. Определим, сделав запрос с очень простым форматом
-            XElement f_simple = new XElement("record", new XElement("field", new XAttribute("prop", ONames.p_name)));
-            XElement xtree0 = StaticObjects.GetItemById(id, f_simple);
-            if (xtree0 == null) return; // записи может и не быть
-            // заполним базовые поля
-            this.id = xtree0.Attribute("id").Value;
-            string type_id = xtree0.Attribute("type").Value;
-            this.type_id = type_id;
+            XElement rec_format;
+            this.type_id = GetFormat(id, out rec_format);
             this.typelabel = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.typelabel == null) this.typelabel = type_id;
-            XElement field_name = xtree0.Elements("field")
+            // Получим портретное х-дерево
+            XElement xtree = StaticObjects.GetItemById(id, rec_format);
+            // По дереву вычислим и зафиксируем остальные поля
+            // поле идентификатора
+            this.id = xtree.Attribute("id").Value;
+            // поле имени
+            XElement field_name = xtree.Elements("field")
                 .Where(fi => fi.Attribute("prop").Value == ONames.p_name)
                 .OrderBy(fi => { 
                     XAttribute lang_att = fi.Attribute(ONames.xmllang);
@@ -85,32 +87,47 @@ namespace Turgunda2.Models
                 })
                 .FirstOrDefault();
             this.name = field_name == null ? "Noname" : field_name.Value;
-            
-            // Теперь установим нужный формат
-            XElement xformat = Common.formats.Elements("record")
-                .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == this.type_id);
-            if (xformat == null) xformat = f_simple;
-            
-            XElement xtree = StaticObjects.GetItemById(id, xformat);
-            // Надо попробовать получить uri
+            // поле uri
             if (type_id == ONames.FOG + "photo-doc")
             {
                 var uri_el = GetUri(xtree);
                 if (uri_el != null) uri = uri_el.Value;
             }
-            // Добавим отца
-            //xtree.Add(new XElement("direct", new XAttribute("prop", ONames.FOG + "father"),
-            //    new XElement("record", new XAttribute("id", "piu_200809051508"), new XAttribute("type", ONames.FOG + "person"),
-            //        new XElement("field", new XAttribute("prop", ONames.FOG + "name"), "Марчук Гурий Иванович"))));
 
-            this.xresult = ConvertToResultStructure(xformat, xtree);
-
+            this.xresult = ConvertToResultStructure(rec_format, xtree);
 
             this.message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
             //this.look = xrecord;
         }
-
-        private static XElement ConvertToResultStructure(XElement xformat, XElement xtree)
+        public static string GetFormat(string id, out XElement rec_format)
+        {
+            string type_id; 
+            // Нам нужен формат. Сначала поищем его в кеше
+            if (!StaticObjects.formatByIdCache.TryGetValue(id, out rec_format))
+            {  // если его там нет, то нам хотя бы нужет тип. Его мы определяем сделав начальный запрос с примитивным форматом
+                XElement f_primitive = new XElement("record");
+                XElement xtree0 = StaticObjects.GetItemById(id, f_primitive);
+                if (xtree0 == null) { }; // Как-то надо поступить с диагностикой ошибок//
+                type_id = xtree0.Attribute("type").Value;
+                // Теперь установим нужный формат
+                XElement xformat = Common.formats.Elements("record")
+                    .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == type_id);
+                if (xformat != null)
+                {
+                    StaticObjects.formatByIdCache.Add(id, xformat);
+                }
+                else
+                {
+                    xformat = new XElement("record",
+                        new XAttribute("type", type_id),
+                        new XElement("field", new XAttribute("prop", ONames.p_name)));
+                }
+                rec_format = xformat;
+            }
+            else type_id = rec_format.Attribute("type").Value;
+            return type_id;
+        }
+        public static XElement ConvertToResultStructure(XElement xformat, XElement xtree)
         {
             XElement result = new XElement("Result",
                 new XElement("header", ScanForFields(xformat)),
@@ -145,7 +162,7 @@ namespace Turgunda2.Models
         // Статический метод: рекурсивное сканирование айтема с вычислением всех определенных форматом записи полей
         // Возвращает таблицу <r id="ид.записи" type="ид.типа"><c>значение</c><c>...</c>...<r>..</r>...</r>
         // где c стоят на позициях полей, а r - на позициях прямых отношений
-        public static XElement GetRecordRow(XElement item, XElement frecord)
+        private static XElement GetRecordRow(XElement item, XElement frecord)
         {
             IEnumerable<XElement> fieldsAndDirects = item.Elements().Where(el => el.Name == "field" || el.Name == "direct");
             var inv_props_atts = frecord.Elements("inverse").Where(fel => fel.Attribute("attname") != null)
@@ -162,7 +179,7 @@ namespace Turgunda2.Models
                 null);
             return r;
         }
-        public static IEnumerable<XElement> ScanForFieldValues(IEnumerable<XElement> fieldsAndDirects, XElement frecord)
+        private static IEnumerable<XElement> ScanForFieldValues(IEnumerable<XElement> fieldsAndDirects, XElement frecord)
         {
             foreach (var f_el in frecord.Elements())
             {
@@ -173,14 +190,14 @@ namespace Turgunda2.Models
                     var field = fieldsAndDirects.Where(fd => fd.Name == "field")
                         .Where(f => f.Attribute("prop").Value == prop)
                         .FirstOrDefault();
-                    XAttribute pr_att = prop == ONames.p_name ? new XAttribute("prop", prop) : null;
-                    if (field == null) yield return new XElement("c", pr_att);
+                    //XAttribute pr_att = prop == ONames.p_name ? new XAttribute("prop", prop) : null;
+                    if (field == null) yield return new XElement("c");
                     else
                     {
-                        XAttribute valueTypeAtt = f_el.Attribute("type");
+                        //XAttribute valueTypeAtt = f_el.Attribute("type");
                         string value = field.Value;
-                        if (valueTypeAtt != null) value = Common.GetEnumStateLabel(valueTypeAtt.Value, value);
-                        yield return new XElement("c", pr_att, value);
+                        //if (valueTypeAtt != null) value = Common.GetEnumStateLabel(valueTypeAtt.Value, value);
+                        yield return new XElement("c", value);
                     }
                 }
                 else if (f_el.Name == "direct")
@@ -200,7 +217,7 @@ namespace Turgunda2.Models
             }
         }
         // Статический метод: рекурсивное сканирование с выявлением всех определенных форматом записи полей
-        public static IEnumerable<XElement> ScanForFields(XElement frecord)
+        private static IEnumerable<XElement> ScanForFields(XElement frecord)
         {
             foreach (var el in frecord.Elements())
             {
@@ -209,7 +226,8 @@ namespace Turgunda2.Models
                 {
                     yield return new XElement("d", new XAttribute("prop", el.Attribute("prop").Value),
                         new XElement("label", Common.OntNames[el.Attribute("prop").Value]),
-                        ScanForFields(el.Element("record")));
+                        el.Elements("record").Select(re => new XElement("r", new XAttribute(re.Attribute("type")),
+                            ScanForFields(re))));
                 }
             }
         }
@@ -222,7 +240,7 @@ namespace Turgunda2.Models
             {
                 label = p.Value;
             }
-            return new XElement("h",
+            return new XElement("f",
                 p == null ? new XAttribute("prop", "nop") : new XAttribute("prop", p.Value),
                 t == null ? null : new XAttribute("valueType", t.Value),
                 label,
@@ -243,6 +261,57 @@ namespace Turgunda2.Models
             return uri;
         }
     }
+    public class RecordModel
+    {
+        // Если eid == bid, то это базовая запись 
+        public string bid { get; set; } // идентификатор "внешней" записи 
+        public string eid { get; set; } // идентификатор "этой" записи
+        public string etype { get; set; } // идентификатор типа е-записи
+        public string iprop { get; set; } // идентификатор обратного (между базовой и этой) отношения
+        public int nc { get; set; } // количество колонок, заменяемы при редактировании
+        private XElement _xresult;
+        public XElement GetXResult() { return _xresult; }
+
+        private XElement _format = null;
+        public XElement CalculateFormat()
+        { _format = StaticObjects.GetEditFormat(etype, iprop); return _format; }
+        private XElement _xtree;
+        public void SetXTree(XElement xtree) { _xtree = xtree; }
+        /// <summary>
+        /// Модель записи. Выполняется последовательно: конструирование модели, загрузка данных, формирование x-результата.
+        /// Вместо второго этапа может быть заполнение x-дерева "со стороны"
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="eid"></param>
+        /// <param name="etype"></param>
+        /// <param name="iprop"></param>
+        /// <param name="nc"></param>
+        //public RecordModel(string bid, string eid, string etype, string iprop, int nc)
+        //{
+        //    this.bid = bid;
+        //    this.eid = eid;
+        //    this.etype = etype;
+        //    this.iprop = iprop;
+        //    this.nc = nc;
+        //}
+        public RecordModel() { }
+
+            
+        public void LoadFromDb() 
+        {
+            CalculateFormat();
+            _xtree = StaticObjects.GetItemById(eid, _format);
+        }
+        public void MakeXResult() 
+        {
+            _xresult = PortraitModel.ConvertToResultStructure(_format, _xtree);
+
+            //look = xresult;
+        }
+
+        public XElement look = null;
+    }
+
     public class SearchResult 
     {
         public string id;
@@ -262,9 +331,9 @@ namespace Turgunda2.Models
         {
             DateTime tt0 = DateTime.Now;
             this.searchstring = searchstring;
-            type = "http://fogid.net/o/person"; // для отладки
+            //type = "http://fogid.net/o/person"; // для отладки
             this.type = type;
-            _results = StaticObjects.SearchByName(searchstring)
+            var query = StaticObjects.SearchByName(searchstring)
                 .Select(xres =>
                 {
                     XElement name_el = xres
@@ -279,7 +348,9 @@ namespace Turgunda2.Models
                     Common.OntNames.TryGetValue(res.type, out tname);
                     res.type_name = tname;
                     return res;
-                })
+                });
+            if (this.type != null) query = query.Where(res => res.type == this.type);
+            _results = query
                 .OrderBy(s => s.value)
                 .ToArray();
             message = "duration=" + ((DateTime.Now - tt0).Ticks/10000L);
@@ -303,28 +374,38 @@ namespace Turgunda2.Models
         public Direct[] darr;
         public Inverse[] iarr;
         public PortraitSpecialModel(string id)
-        { // Этот метод надо будет доделать
-            //var record = sema2012m.DbEntry.GetRecordById(id);
-            //this.id = record.LastId;
-            //string type_id = record.TypeId;
-            //this.type_id = type_id;
-            //this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
-            //if (this.type == null) this.type = type_id;
-            //this.name = Common.GetNameFromRecord(record);
-            //farr = record.RecordElements.Where(el => !el.IsObjectProperty)
-            //    .Select(el => new Field() { prop = el.Predicate, value = el.Value, lang = el.Lang })
-            //    .ToArray();
-            //darr = record.RecordElements.Where(el => el.IsObjectProperty)
-            //    .Select(el => new Direct() { prop = el.Predicate, resource = el.Value })
-            //    .ToArray();
-            //iarr = sema2012m.DbEntry.GetInverseRecordsById(record)
-            //    .Select(en => new Inverse()
-            //    {
-            //        about = en.LastId,
-            //        prop = en.RecordElements.Where(re => re.IsObjectProperty).First(re => re.Value == this.id).Predicate,
-            //        name = en.RecordElements.Where(re => !re.IsObjectProperty && re.Predicate == sema2012m.ONames.p_name)
-            //            .Select(re => re.Value).FirstOrDefault()
-            //    }).ToArray();
+        { 
+            XElement record = StaticObjects.GetItemByIdSpecial(id);
+            this.id = record.Attribute("id").Value;
+            string type_id = record.Attribute("type")==null?"notype": record.Attribute("type").Value;
+            this.type_id = type_id;
+            this.type = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
+            if (this.type == null) this.type = type_id;
+            var name_el = record.Elements("field").Where(f => f.Attribute("prop").Value == sema2012m.ONames.p_name)
+                .FirstOrDefault();
+            this.name = name_el == null ? "noname" : name_el.Value;
+            farr = record.Elements("field")
+                .Select(el => new Field() { prop = el.Attribute("prop").Value, value = el.Value, lang = (el.Attribute(sema2012m.ONames.xmllang) == null? null : el.Attribute(sema2012m.ONames.xmllang).Value) })
+                .ToArray();
+            darr = record.Elements("direct")
+                .Select(el => new Direct() { prop = el.Attribute("prop").Value, resource = el.Element("record").Attribute("id").Value })
+                .ToArray();
+            iarr = record.Elements("inverse")
+                .Select(el => new Inverse() { prop = el.Attribute("prop").Value, about = el.Element("record").Attribute("id").Value })
+                .ToArray();
         }
+    }
+    // Вспомогательная модель конвертации данных
+    public class ConvertModel
+    {
+        public string entityvalue { get; set; }
+        public string entityid { get; set; }
+    }
+    // Вспомогательная модель для сканирования фог-документов
+    
+    public class EntityPlacesModel
+    {
+        public string entityvalue { get; set; }
+        public KeyValuePair<string, string>[] places; 
     }
 }

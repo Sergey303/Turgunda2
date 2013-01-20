@@ -2,61 +2,107 @@
 @model Turgunda2.Models.PortraitModel
 @{
     if (Model == null || Model.xresult == null) { return; }
+    bool edit = User.IsInRole("user");
+    string id = Model.id;
 }
 
-@helper HTable(XElement container)
-{
+@helper HTable(XElement container, string id, string iprop, string ttype, bool edit)
+    {
+        XElement[] headerelements = container.Element("header").Elements().ToArray();
 <table>
     <tr>
-    @foreach (XElement h in container.Element("header").Elements())
+    @foreach (XElement f in headerelements)
     {
         <th>
-        @if (h.Name == "h")
-        { @h.Value }
+        @if (f.Name == "f")
+        { @f.Value }
         else
-        { @h.Element("label").Value } 
+        { @f.Element("label").Value } 
         </th>
+    }
+    @if (edit)
+    {
+        <td></td>
     }
     </tr>
     @foreach (XElement r in container.Elements("r"))
     {
-        
-    <tr>
-        @foreach (XElement cr in r.Elements()) 
-        {
-            if (cr.Name == "c")
-            { 
-                <td class="d">@cr.Value</td> 
-            }
-            else
-            {
-                XAttribute d_att = cr.Attribute("id");
-                string d_id = d_att==null? "" : d_att.Value;
-                var qu = cr.Elements()
-                    .Select(c => { return new XText(c.Value); });
-                <td>
-                @foreach (XElement c in cr.Elements()) 
-                {
-                    XAttribute prop_att = c.Attribute("prop");
-                    if (prop_att != null && prop_att.Value == sema2012m.ONames.p_name) 
-                    {
-                        <a href="?id=@d_id">@c.Value</a>
-                    }
-                    else
-                    {
-                        <span>@c.Value</span>
-                    }
-                } 
-                </td>
-                //string d_name = c.Value;
-                //<td><a href="?id=@d_id">@d_name</a></td>
-            }
-        }
-    </tr>
+        @HRow(r, headerelements, id, iprop, ttype, edit)
     }
 </table>  
 }
 
+@helper HRow(XElement r, XElement[] headerelements, string id, string iprop, string rtype, bool edit)
+{
+    string eid = r.Attribute("id").Value;
+    XElement[] rowelements = r.Elements().ToArray(); 
+    <tr id='@eid'>
+    @for (int i=0; i<rowelements.Length; i++)
+    {
+        XElement cr = rowelements[i];
+        XElement f = headerelements[i];
+        if (cr.Name == "c")
+        {
+            XAttribute valueTypeAtt = f.Attribute("valueType");
+            string value = cr.Value;
+            if (valueTypeAtt != null) { value = Turgunda2.Models.Common.GetEnumStateLabel(valueTypeAtt.Value, value); }
+        <td class="d">@value</td> 
+        }
+        else
+        {
+            XAttribute d_att = cr.Attribute("id");
+            string d_id = d_att == null ? "" : d_att.Value;
+            XAttribute d_ty = cr.Attribute("type");
+            string d_tid = d_ty == null ? "" : d_ty.Value;
+            XElement fr = f.Elements("r").FirstOrDefault(rr => rr.Attribute("type").Value == d_tid);
+            XElement[] frow = new XElement[0];
+            if (fr != null) 
+            {
+                frow = fr.Elements("f").ToArray();
+            }
+            var qu = cr.Elements()
+                .Select(c => { return new XText(c.Value); }).ToArray();
+            bool isfirst = true;
+            int j = 0;
+        <td>
+            @foreach (XElement c in cr.Elements())
+            {
+                string val = c.Value;
+                if (j < frow.Length)
+                {
+                    var valueTypeAtt = frow[j].Attribute("valueType");
+                    if (valueTypeAtt != null) 
+                    {
+                        val = Turgunda2.Models.Common.GetEnumStateLabel(valueTypeAtt.Value, val);
+                    }
+                }
+                //XAttribute prop_att = c.Attribute("prop"); //prop_att != null && prop_att.Value == sema2012m.ONames.p_name)
+                if (isfirst) 
+                {
+                    isfirst = false;
+                <a href="?id=@d_id">@val</a>
+                }
+                else
+                {
+                <span>@val</span>
+                }
+                j++;
+            }
+        </td>
+        }
+    }
+    @if (edit)
+    {
+        <td>@Ajax.ActionLink("edit", "EditForm", new { bid = id, eid = eid, etype=rtype, iprop=iprop, nc=r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+            {
+                HttpMethod = "Post",
+                InsertionMode = InsertionMode.Replace,
+                UpdateTargetId = eid
+            })
+        </td>
+    }
+    </tr>
+}
 <!-- ================= Начало построения ================= -->
 <div>@Model.typelabel</div>
 @if (Model.uri == null)
@@ -69,7 +115,44 @@ else
     <img src="@url" />
 }
 
-@HTable(Model.xresult)
+@HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit)
+
+@if (edit)
+{
+    var query = Model.xresult.Elements("ip");
+<div>
+  @foreach (XElement ip in query)
+  {
+      //if (ip.Elements("ir").Any((XElement ir) => ir.Elements("r")))
+      string label = ip.Element("label").Value;
+      XElement[] irs = ip.Elements("ir").ToArray();
+      if (irs.Length == 0) { continue; }
+      else if (irs.Length == 1)
+      {
+          string type_id = irs[0].Attribute("type").Value;
+      @Html.ActionLink(label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
+      }
+      else
+      {
+          bool firsttime = true;
+      <span>@label
+        (
+        @foreach (XElement ir in irs)
+        {
+            string ir_label = ir.Element("label").Value;
+            string type_id = ir.Attribute("type").Value;
+            if (!firsttime)
+            { <span> </span> }
+            else { firsttime = false; }
+            @Html.ActionLink(ir_label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
+        }
+        )
+      </span>
+      }
+      <span> </span>
+  }
+</div>
+}
 <table>
 @foreach (XElement ip in @Model.xresult.Elements("ip"))
 {
@@ -84,10 +167,10 @@ else
             <div>@ir.Element("label").Value</div>
             if (view_att != null && view_att.Value == "largeicons")
             {
-                foreach (XElement r in ir.Elements("r")) 
+                foreach (XElement r in ir.Elements("r"))
                 {
-                    string url="";
-                    string src="";
+                    string url = "";
+                    string src = "";
                     List<string> parts = new List<string>();
                     foreach (var fr in r.Elements())
                     {
@@ -97,19 +180,19 @@ else
                         }
                         else if (fr.Name == "r")
                         {
-                            var id_att = fr.Attribute("id");
-                            var ty_att = fr.Attribute("type");
-                            if (id_att == null || ty_att == null) { continue; }
-                            string id = id_att.Value;
-                            string ty = ty_att.Value;
+                            var rid_att = fr.Attribute("id");
+                            var rty_att = fr.Attribute("type");
+                            if (rid_att == null || rty_att == null) { continue; }
+                            string rid = rid_att.Value;
+                            string rty = rty_att.Value;
                             XAttribute uri_att = fr.Attribute("uri");
-                            if (uri_att != null) 
+                            if (uri_att != null)
                             {
                                 src = Url.Content("~/Docs/GetPhoto?s=small&u=" + uri_att.Value);
-                                url = "?id=" + id;
+                                url = "?id=" + rid;
                             }
                             parts.AddRange(fr.Elements("c").Select(c => c.Value));
-                        }    
+                        }
                     }
                 <div class="brick">
                 <div>
@@ -117,7 +200,7 @@ else
                     <img src="@src" />
                 </a>
                 </div>
-                @if (parts.Count() > 0) 
+                @if (parts.Count() > 0)
                 {
                 <div style="font-size:smaller;">@parts.Aggregate((sum, part) => sum + " | " + part)</div>
                 }
@@ -128,7 +211,7 @@ else
             }
             else
             {
-                @HTable(ir)
+                @HTable(ir, id, ip.Attribute("prop").Value, ir.Attribute("type").Value, edit)
             }
         }
         </td>
@@ -139,6 +222,7 @@ else
 @*
 <pre>@Model.xresult.ToString()</pre>
 *@
+
 @if (Model.look != null)
 {
 <pre>@Model.look.ToString()</pre>

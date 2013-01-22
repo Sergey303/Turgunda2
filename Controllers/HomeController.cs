@@ -45,6 +45,7 @@ namespace Turgunda2.Controllers
         {
             string message = "База данных загружена";
             System.DateTime tt0 = DateTime.Now;
+            StaticObjects.Init();
             try
             {
                 Turgunda2.StaticObjects.LoadFromCassettesExpress();
@@ -81,98 +82,122 @@ namespace Turgunda2.Controllers
             //string nid = StaticObjects.CreateNewItem(searchstring, type, User.Identity.Name);
             return RedirectToAction("Portrait", "Home", new { id = eid });
         }
-        //[HttpPost]
-        //public PartialViewResult EditForm(string id, string eid, string etype, string iprop, int nc)
-        //{
-        //    string chk = Request.Params["chk"]; // проверка ОДНОЙ введенной связи
-        //    string ok = Request.Params["ok"]; // фиксация изменений, запоминание в БД
-        //    Turgunda2.Models.RecordModel rm = new Models.RecordModel(id, eid, etype, iprop, nc);
-        //    if (chk == null && ok == null)
-        //    { // формирование формы редактирования
-        //        rm.LoadFromDb();
-        //        rm.MakeXResult();
-        //    }
-        //    else
-        //    { // Собирание данных из реквеста
-        //        XElement format = rm.format;
-        //        XElement xtree = new XElement("record", new XAttribute("id", eid), new XAttribute("type", etype));
-        //        int i = 0;
-        //        foreach (XElement fd in format.Elements().Where(el => el.Name == "field" || el.Name == "direct"))
-        //        {
-        //            string prop = fd.Attribute("prop").Value;
-        //            string par = Request.Params["f_" + i];
-        //            if (string.IsNullOrEmpty(par)) { }
-        //            else if (fd.Name == "field")
-        //            {
-        //                xtree.Add(new XElement("field", new XAttribute("prop", prop), par));
-        //            }
-        //            else
-        //            {
-        //                string did = "id999"; //Request.Params["d_" + i];
-        //                string tid = Request.Params["t_" + i];
-        //                if (!string.IsNullOrEmpty(did) && !string.IsNullOrEmpty(tid))
-        //                {
-        //                    xtree.Add(new XElement("direct", new XAttribute("prop", prop),
-        //                        new XElement("record", new XAttribute("id", did), new XAttribute("type", tid),
-        //                            new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name), par))));
-        //                }
-        //            }
-        //            i++;
-        //        }
-        //        rm.xtree = xtree;
-        //        rm.MakeXResult();
-        //    }
-        //    return PartialView(rm);
-        //}
+        /// <summary>
+        /// EditForm вычисляет (строит, корректирует) модель записи и направляет ее на View построения фрагмента редактирования.
+        /// Возможно несколько случаев запуска EditForm: 1) начальное построение объекта класса RecordModel, который представляет 
+        /// собой формируемую копию имеющейся записи; 2) коррекция модели и построение формы; 3) фиксация результата в БД.
+        /// Носителем состояния объекта являются публичные переменные, передаваемые от построения к построению. Признаком
+        /// первого варианта является булевский признак firsttime, который потом "гасится" до конца итераций.  
+        /// </summary>
+        /// <param name="rmodel"></param>
+        /// <returns></returns>
         [HttpPost]
-        public PartialViewResult EditForm(Turgunda2.Models.RecordModel rm)
+        public PartialViewResult EditForm(Turgunda2.Models.RecordModel rmodel)
         {
             string chk = Request.Params["chk"]; // проверка ОДНОЙ введенной связи
             string ok = Request.Params["ok"]; // фиксация изменений, запоминание в БД
             //Turgunda2.Models.RecordModel rm = new Models.RecordModel(id, eid, etype, iprop, nc);
-            if (chk == null && ok == null)
+            if (rmodel.firsttime)
             { // формирование формы редактирования
-                rm.LoadFromDb();
-                rm.MakeXResult();
+                rmodel.firsttime = false;
+                rmodel.LoadFromDb();
+                rmodel.MakeLocalRecord();
+                XElement[] arr = rmodel.GetHeaderFlow().ToArray();
+                //rmodel.MakeXResult();
             }
             else
             { // Собирание данных из реквеста
-                XElement format = rm.CalculateFormat();
-                XElement xtree = new XElement("record", new XAttribute("id", rm.eid), new XAttribute("type", rm.etype));
-                int i = 0;
-                foreach (XElement fd in format.Elements().Where(el => el.Name == "field" || el.Name == "direct"))
-                {
-                    string prop = fd.Attribute("prop").Value;
-                    string par = Request.Params["f_" + i];
-                    if (string.IsNullOrEmpty(par)) { }
-                    else if (fd.Name == "field")
-                    {
-                        xtree.Add(new XElement("field", new XAttribute("prop", prop), par));
-                    }
-                    else
-                    {
-                        string did = "id999"; //Request.Params["d_" + i];
-                        string tid = Request.Params["t_" + i];
-                        if (!string.IsNullOrEmpty(did) && !string.IsNullOrEmpty(tid))
+                XElement format = rmodel.CalculateFormat();
+                XElement[] hrows = rmodel.GetHeaderFlow().ToArray();
+                if (chk != null)
+                {   // Проверка. Находим первый ряд такой, что: а) это прямое отношение, б) набран текст и есть тип, в) нет ссылки. 
+                    // Делаем поисковый запрос через SearchModel. Результаты SearchResult[] помещаем в ViewData под именем searchresults,
+                    // а в ViewData["searchindex"] поместим индекс
+                    var pair = hrows.Select((hr, ind) => new { hr = hr, ind = ind })
+                        .FirstOrDefault(hrind =>
                         {
-                            xtree.Add(new XElement("direct", new XAttribute("prop", prop),
-                                new XElement("record", new XAttribute("id", did), new XAttribute("type", tid),
-                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name), par))));
-                        }
+                            var hr = hrind.hr;
+                            if (hr.Name != "d") return false;
+                            var ind = hrind.ind;
+                            if (string.IsNullOrEmpty(rmodel.GetFValue(ind)) || string.IsNullOrEmpty(rmodel.GetTValue(ind))) return false;
+                            if (!string.IsNullOrEmpty(rmodel.GetPValue(ind))) return false;
+                            return true;
+                        });
+                    if (pair != null) 
+                    {
+                        int ind = pair.ind;
+                        // Ничего проверять не буду
+                        Turgunda2.Models.SearchModel sm = new Models.SearchModel(rmodel.GetFValue(ind), rmodel.GetTValue(ind));
+                        ViewData["searchresults"] = sm.Results;
+                        ViewData["searchindex"] = ind;
                     }
-                    i++;
                 }
-                rm.SetXTree(xtree);
-                rm.MakeXResult();
+                else if (ok != null)
+                { // Запоминание
+                    // Соберем получившуюся запись
+                    XElement record = new XElement(sema2012m.ONames.GetXName(rmodel.etype),
+                        new XAttribute(sema2012m.ONames.rdfabout, rmodel.eid),
+                        hrows.Select((fd, ind) => new { fd = fd, ind = ind })
+                        .Select(fdind => 
+                        {
+                            XElement fd = fdind.fd;
+                            int ind = fdind.ind;
+                            XName xprop = sema2012m.ONames.GetXName(fd.Attribute("prop").Value);
+                            if (fd.Name == "f")
+                            {
+                                string value = rmodel.GetFValue(ind);
+                                if (!string.IsNullOrEmpty(value)) 
+                                    return new XElement(xprop, rmodel.GetFValue(ind)); // Надо определить еще нужен ли язык и какой
+                            }
+                            else if (fd.Name == "d")
+                            {
+                                string pvalue = rmodel.GetPValue(ind);
+                                if (!string.IsNullOrEmpty(pvalue))
+                                    return new XElement(xprop,
+                                    new XAttribute(sema2012m.ONames.rdfresource, rmodel.GetPValue(ind)));
+                            }
+                            return (XElement)null;
+                        }));
+                     // Пошлем эту запись на изменение
+                    StaticObjects.ChangeItem(record, User.Identity.Name);
+
+                    return PartialView("EditFormFinal", rmodel);
+                }
+                else if (rmodel.command != null && rmodel.command == "SetVariant")
+                { // Выбор варианта значения для связывания
+                    string[] parts = rmodel.exchange.Split('|');
+                    int ind = Int32.Parse(parts[0]);
+                    string p_id = parts[1];
+                    string p_name = parts[2];
+                    rmodel.SetPValue(ind, p_id);
+                    rmodel.SetFValue(ind, p_name);
+                    rmodel.CalculateFormat();
+                }
+                else if (rmodel.command != null && rmodel.command == "SetVariantNew")
+                { // Связывание с новым значением
+                    string[] parts = rmodel.exchange.Split('|');
+                    int ind = Int32.Parse(parts[0]);
+                    string p_type = parts[1];
+                    string p_name = parts[2];
+                    string nid = StaticObjects.CreateNewItem(p_name, p_type, User.Identity.Name);
+                    rmodel.SetPValue(ind, nid);
+                    rmodel.SetFValue(ind, p_name);
+                    rmodel.CalculateFormat();
+                }
+                else
+                { // Остальное
+
+                }
             }
-            return PartialView("EditForm", rm);
+            return PartialView("EditForm", rmodel);
         }
 
         //[HttpPost]
         public PartialViewResult SetVariant(Turgunda2.Models.RecordModel rmodel)
         {
             //Turgunda2.Models.RecordModel rmodel = new Models.RecordModel();
-            return PartialView("EditForm", rmodel);
+            //return PartialView("EditForm", rmodel);
+            return EditForm(rmodel);
         }
 
         /// ==================  Вспомогательные и отладочные входы =================

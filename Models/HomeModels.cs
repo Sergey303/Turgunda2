@@ -52,6 +52,15 @@ namespace Turgunda2.Models
             if (et_state == null) return "";
             return et_state.Value;
         }
+        public static IEnumerable<XElement> GetEnumStates(string enum_type)
+        {
+            var et_def = _ontology.Elements("EnumerationType")
+                .FirstOrDefault(et => et.Attribute(ONames.rdfabout).Value == enum_type);
+            if (et_def == null) return null;
+            var et_states = et_def.Elements("state")
+                .Where(st => st.Attribute(ONames.xmllang).Value == "ru");
+            return et_states;
+        }
 
     }
     public class PortraitModel
@@ -114,7 +123,7 @@ namespace Turgunda2.Models
                     .FirstOrDefault(re => re.Attribute("type") != null && re.Attribute("type").Value == type_id);
                 if (xformat != null)
                 {
-                    StaticObjects.formatByIdCache.Add(id, xformat);
+                    //StaticObjects.formatByIdCache.Add(id, xformat); -- Это потому, что я решил, что кеш потенциално вреден
                 }
                 else
                 {
@@ -130,7 +139,7 @@ namespace Turgunda2.Models
         public static XElement ConvertToResultStructure(XElement xformat, XElement xtree)
         {
             XElement result = new XElement("Result",
-                new XElement("header", ScanForFields(xformat)),
+                new XElement("header", ScanForHeaderFields(xformat)),
                 GetRecordRow(xtree, xformat),
                 null);
             foreach (var f_inv in xformat.Elements("inverse"))
@@ -148,7 +157,7 @@ namespace Turgunda2.Models
                         new XAttribute("type", recType),
                         view_att==null?null: new XAttribute(view_att),
                         new XElement("label", Common.OntNames[recType]),
-                        new XElement("header", ScanForFields(f_rec)));
+                        new XElement("header", ScanForHeaderFields(f_rec)));
                     ip.Add(ir);
                     foreach (var v_rec in queryForRecords)
                     {
@@ -217,7 +226,7 @@ namespace Turgunda2.Models
             }
         }
         // Статический метод: рекурсивное сканирование с выявлением всех определенных форматом записи полей
-        private static IEnumerable<XElement> ScanForFields(XElement frecord)
+        public static IEnumerable<XElement> ScanForHeaderFields(XElement frecord)
         {
             foreach (var el in frecord.Elements())
             {
@@ -227,7 +236,7 @@ namespace Turgunda2.Models
                     yield return new XElement("d", new XAttribute("prop", el.Attribute("prop").Value),
                         new XElement("label", Common.OntNames[el.Attribute("prop").Value]),
                         el.Elements("record").Select(re => new XElement("r", new XAttribute(re.Attribute("type")),
-                            ScanForFields(re))));
+                            ScanForHeaderFields(re))));
                 }
             }
         }
@@ -263,53 +272,337 @@ namespace Turgunda2.Models
     }
     public class RecordModel
     {
+        public RecordModel() { }
+
+        public string command { get; set; }
+        public string exchange { get; set; }
+        private bool _firsttime = false;
+        public bool firsttime { get { return _firsttime; } set { _firsttime = value; } }
         // Если eid == bid, то это базовая запись 
         public string bid { get; set; } // идентификатор "внешней" записи 
         public string eid { get; set; } // идентификатор "этой" записи
         public string etype { get; set; } // идентификатор типа е-записи
         public string iprop { get; set; } // идентификатор обратного (между базовой и этой) отношения
         public int nc { get; set; } // количество колонок, заменяемы при редактировании
-        private XElement _xresult;
-        public XElement GetXResult() { return _xresult; }
+        //private XElement _xresult;
+        //public XElement GetXResult() { return _xresult; }
 
         private XElement _format = null;
         public XElement CalculateFormat()
         { _format = StaticObjects.GetEditFormat(etype, iprop); return _format; }
         private XElement _xtree;
         public void SetXTree(XElement xtree) { _xtree = xtree; }
-        /// <summary>
-        /// Модель записи. Выполняется последовательно: конструирование модели, загрузка данных, формирование x-результата.
-        /// Вместо второго этапа может быть заполнение x-дерева "со стороны"
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="eid"></param>
-        /// <param name="etype"></param>
-        /// <param name="iprop"></param>
-        /// <param name="nc"></param>
-        //public RecordModel(string bid, string eid, string etype, string iprop, int nc)
-        //{
-        //    this.bid = bid;
-        //    this.eid = eid;
-        //    this.etype = etype;
-        //    this.iprop = iprop;
-        //    this.nc = nc;
-        //}
-        public RecordModel() { }
-
             
         public void LoadFromDb() 
         {
             CalculateFormat();
             _xtree = StaticObjects.GetItemById(eid, _format);
         }
-        public void MakeXResult() 
+        public IEnumerable<XElement> GetHeaderFlow()
         {
-            _xresult = PortraitModel.ConvertToResultStructure(_format, _xtree);
+            return PortraitModel.ScanForHeaderFields(_format);
+        }
+        //public void MakeXResult() 
+        //{
+        //    _xresult = PortraitModel.ConvertToResultStructure(_format, _xtree);
+        //    //look = xresult;
+        //}
 
-            //look = xresult;
+        /// <summary>
+        /// Для имеющегося формата _format и древовидного результата _xtree, ему соответствующего, создается копия объекта
+        /// через его отображение в поля f_0, f_1,.., p_0, p1,..,t_0, t_1, ..
+        /// </summary>
+        public void MakeLocalRecord()
+        {
+            var field_xvalues = _xtree.Elements("field");
+            var direct_xvalues = _xtree.Elements("direct");
+            int i = 0;
+            foreach (XElement fd in GetHeaderFlow())
+            {
+                string prop = fd.Attribute("prop").Value;
+                if (fd.Name == "f")
+                {
+                    XElement elem = field_xvalues.Where(f => f.Attribute("prop").Value == prop)
+                        .OrderBy(f =>
+                        {
+                            var att = f.Attribute(sema2012m.ONames.xmllang);
+                            return att == null ? "" : att.Value;
+                        })
+                        .FirstOrDefault();
+                    if (elem != null)
+                    {
+                        SetFValue(i, elem.Value);
+                    }
+                }
+                else if (fd.Name == "d")
+                {
+                    XElement elem = direct_xvalues.FirstOrDefault(d => d.Attribute("prop").Value == prop);
+                    if (elem != null)
+                    {
+                        XElement rec = elem.Element("record");
+                        if (rec != null)
+                        {
+                            XAttribute t_att = rec.Attribute("type");
+                            if (t_att != null)
+                            {
+                                // Надо еще поставить проверку типов и способа вычисления значения
+                                var ref_name_el = rec.Elements("field")
+                                    .FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name);
+                                if (ref_name_el != null)
+                                {
+                                    SetFValue(i, ref_name_el.Value);
+                                    SetPValue(i, rec.Attribute("id").Value);
+                                    SetTValue(i, t_att.Value);
+                                }
+                            }
+                        }
+                    }
+                }
+                else { } // не должно быть этого варианта, но если он будет, непонятно что делать
+                i++;
+            }
         }
 
+        // Отладочная структура
         public XElement look = null;
+
+        public string f_0 { get; set; }
+        public string f_1 { get; set; }
+        public string f_2 { get; set; }
+        public string f_3 { get; set; }
+        public string f_4 { get; set; }
+        public string f_5 { get; set; }
+        public string f_6 { get; set; }
+        public string f_7 { get; set; }
+        public string f_8 { get; set; }
+        public string f_9 { get; set; }
+        public string f_10 { get; set; }
+        public string f_11 { get; set; }
+        public string f_12 { get; set; }
+        public string f_13 { get; set; }
+        public string f_14 { get; set; }
+        public string f_15 { get; set; }
+        public string f_16 { get; set; }
+        public string f_17 { get; set; }
+        public string f_18 { get; set; }
+        public string f_19 { get; set; }
+        public string f_20 { get; set; }
+
+        public string p_0 { get; set; }
+        public string p_1 { get; set; }
+        public string p_2 { get; set; }
+        public string p_3 { get; set; }
+        public string p_4 { get; set; }
+        public string p_5 { get; set; }
+        public string p_6 { get; set; }
+        public string p_7 { get; set; }
+        public string p_8 { get; set; }
+        public string p_9 { get; set; }
+        public string p_10 { get; set; }
+        public string p_11 { get; set; }
+        public string p_12 { get; set; }
+        public string p_13 { get; set; }
+        public string p_14 { get; set; }
+        public string p_15 { get; set; }
+        public string p_16 { get; set; }
+        public string p_17 { get; set; }
+        public string p_18 { get; set; }
+        public string p_19 { get; set; }
+        public string p_20 { get; set; }
+
+        public string t_0 { get; set; }
+        public string t_1 { get; set; }
+        public string t_2 { get; set; }
+        public string t_3 { get; set; }
+        public string t_4 { get; set; }
+        public string t_5 { get; set; }
+        public string t_6 { get; set; }
+        public string t_7 { get; set; }
+        public string t_8 { get; set; }
+        public string t_9 { get; set; }
+        public string t_10 { get; set; }
+        public string t_11 { get; set; }
+        public string t_12 { get; set; }
+        public string t_13 { get; set; }
+        public string t_14 { get; set; }
+        public string t_15 { get; set; }
+        public string t_16 { get; set; }
+        public string t_17 { get; set; }
+        public string t_18 { get; set; }
+        public string t_19 { get; set; }
+        public string t_20 { get; set; }
+
+        public void SetFValue(int i, string s)
+        {
+            switch (i)
+            {
+                case 0: f_0 = s; break;
+                case 1: f_1 = s; break;
+                case 2: f_2 = s; break;
+                case 3: f_3 = s; break;
+                case 4: f_4 = s; break;
+                case 5: f_5 = s; break;
+                case 6: f_6 = s; break;
+                case 7: f_7 = s; break;
+                case 8: f_8 = s; break;
+                case 9: f_9 = s; break;
+                case 10: f_10 = s; break;
+                case 11: f_11 = s; break;
+                case 12: f_12 = s; break;
+                case 13: f_13 = s; break;
+                case 14: f_14 = s; break;
+                case 15: f_15 = s; break;
+                case 16: f_16 = s; break;
+                case 17: f_17 = s; break;
+                case 18: f_18 = s; break;
+                case 19: f_19 = s; break;
+                case 20: f_20 = s; break;
+                default: break;
+            }
+        }
+        public void SetPValue(int i, string s)
+        {
+            switch (i)
+            {
+                case 0: p_0 = s; break;
+                case 1: p_1 = s; break;
+                case 2: p_2 = s; break;
+                case 3: p_3 = s; break;
+                case 4: p_4 = s; break;
+                case 5: p_5 = s; break;
+                case 6: p_6 = s; break;
+                case 7: p_7 = s; break;
+                case 8: p_8 = s; break;
+                case 9: p_9 = s; break;
+                case 10: p_10 = s; break;
+                case 11: p_11 = s; break;
+                case 12: p_12 = s; break;
+                case 13: p_13 = s; break;
+                case 14: p_14 = s; break;
+                case 15: p_15 = s; break;
+                case 16: p_16 = s; break;
+                case 17: p_17 = s; break;
+                case 18: p_18 = s; break;
+                case 19: p_19 = s; break;
+                case 20: p_20 = s; break;
+                default: break;
+            }
+        }
+        public void SetTValue(int i, string s)
+        {
+            switch (i)
+            {
+                case 0: t_0 = s; break;
+                case 1: t_1 = s; break;
+                case 2: t_2 = s; break;
+                case 3: t_3 = s; break;
+                case 4: t_4 = s; break;
+                case 5: t_5 = s; break;
+                case 6: t_6 = s; break;
+                case 7: t_7 = s; break;
+                case 8: t_8 = s; break;
+                case 9: t_9 = s; break;
+                case 10: t_10 = s; break;
+                case 11: t_11 = s; break;
+                case 12: t_12 = s; break;
+                case 13: t_13 = s; break;
+                case 14: t_14 = s; break;
+                case 15: t_15 = s; break;
+                case 16: t_16 = s; break;
+                case 17: t_17 = s; break;
+                case 18: t_18 = s; break;
+                case 19: t_19 = s; break;
+                case 20: t_20 = s; break;
+                default: break;
+            }
+        }
+        public string GetFValue(int i)
+        {
+            switch (i)
+            {
+                case 0: return f_0;
+                case 1: return f_1;
+                case 2: return f_2;
+                case 3: return f_3;
+                case 4: return f_4;
+                case 5: return f_5;
+                case 6: return f_6;
+                case 7: return f_7;
+                case 8: return f_8;
+                case 9: return f_9;
+                case 10: return f_10;
+                case 11: return f_11;
+                case 12: return f_12;
+                case 13: return f_13;
+                case 14: return f_14;
+                case 15: return f_15;
+                case 16: return f_16;
+                case 17: return f_17;
+                case 18: return f_18;
+                case 19: return f_19;
+                case 20: return f_20;
+                default: break;
+            }
+            return null;
+        }
+        public string GetPValue(int i)
+        {
+            switch (i)
+            {
+                case 0: return p_0;
+                case 1: return p_1;
+                case 2: return p_2;
+                case 3: return p_3;
+                case 4: return p_4;
+                case 5: return p_5;
+                case 6: return p_6;
+                case 7: return p_7;
+                case 8: return p_8;
+                case 9: return p_9;
+                case 10: return p_10;
+                case 11: return p_11;
+                case 12: return p_12;
+                case 13: return p_13;
+                case 14: return p_14;
+                case 15: return p_15;
+                case 16: return p_16;
+                case 17: return p_17;
+                case 18: return p_18;
+                case 19: return p_19;
+                case 20: return p_20;
+                default: break;
+            }
+            return null;
+        }
+        public string GetTValue(int i)
+        {
+            switch (i)
+            {
+                case 0: return t_0;
+                case 1: return t_1;
+                case 2: return t_2;
+                case 3: return t_3;
+                case 4: return t_4;
+                case 5: return t_5;
+                case 6: return t_6;
+                case 7: return t_7;
+                case 8: return t_8;
+                case 9: return t_9;
+                case 10: return t_10;
+                case 11: return t_11;
+                case 12: return t_12;
+                case 13: return t_13;
+                case 14: return t_14;
+                case 15: return t_15;
+                case 16: return t_16;
+                case 17: return t_17;
+                case 18: return t_18;
+                case 19: return t_19;
+                case 20: return t_20;
+                default: break;
+            }
+            return null;
+        }
     }
 
     public class SearchResult 

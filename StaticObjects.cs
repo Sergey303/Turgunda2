@@ -106,7 +106,7 @@ namespace Turgunda2
             XElement ontology = XElement.Load(path + "PublicuemCommon/ontology_iis-v10-doc_ruen.xml");
             Turgunda2.Models.Common.LoadOntNamesFromOntology(ontology);
             // Инициализация или чистка кешей
-            formatByIdCache = new Dictionary<string, XElement>();
+            formatByIdCache = new Dictionary<string, XElement>(); // Надо бы этот кеш убрать!!! -- я убрал только его наполнение (.Add())!
 
             turlog("Turgunda initiated");
         }
@@ -123,7 +123,7 @@ namespace Turgunda2
         public static IEnumerable<XElement> SearchByName(string searchstring) { return engine.SearchByName(searchstring); }
         //public static string GetType(string id) { return adapter.GetType(id); }
         public static XElement GetItemById(string id, XElement format) { return engine.GetItemById(id, format); }
-        public static XElement GetItemByIdSpecial(string id) { return engine.GetItemByIdSpecial(id); }
+        public static XElement GetItemByIdSpecial(string id) { return engine.GetItemByIdBasic(id, true); }
         // Отладочные процедуры
         public static string SpecialGetEntityNameByIndex(int ind) { return engine.SpecialGetEntityNameByIndex(ind); }
         public static IEnumerable<KeyValuePair<string, string>> SpecialEntityPlaces(string id)
@@ -186,6 +186,22 @@ namespace Turgunda2
             
             return xrecord.Attribute(sema2012m.ONames.rdfabout).Value;
         }
+        public static void ChangeItem(XElement item, string username)
+        {
+            factograph.RDFDocumentInfo docinfo = CassetteKernel.CassettesConnection.docsInfo
+                .Select(pair => pair.Value)
+                .FirstOrDefault(di => di.isEditable && di.owner == username);
+            if (docinfo == null) { }
+
+            XElement item_corrected = engine.ReceiveXCommand(item);
+
+            item_corrected.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("u")));
+            // Внедрить и сохранить
+            docinfo.GetRoot().Add(new XElement(item_corrected)); // Делаю клона и записываю в фог-документ
+            docinfo.isChanged = true;
+            docinfo.Save();
+            // Тут еще в лог изменений надо записать
+        }
 
         private static XElement CreateNewXRecordAndSave(string type, string username, params object[] content) // В content помещается содержимое записи
         {
@@ -196,7 +212,7 @@ namespace Turgunda2
             XName xn = GetXName(type);
             string id = docinfo.NextId();
             XElement xrecord = new XElement(xn, new XAttribute(sema2012m.ONames.rdfabout, id), content);
-            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToString("u")));
+            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("u")));
             // Внедрить и сохранить
             docinfo.GetRoot().Add(new XElement(xrecord)); // Делаю клона и записываю в фог-документ
             docinfo.isChanged = true;

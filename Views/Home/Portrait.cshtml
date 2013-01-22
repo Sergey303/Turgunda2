@@ -27,17 +27,18 @@
     </tr>
     @foreach (XElement r in container.Elements("r"))
     {
-        @HRow(r, headerelements, id, iprop, ttype, edit)
+        string eid = r.Attribute("id").Value;
+        <tr id='@eid'>
+        @HRow(r, eid, headerelements, id, iprop, ttype, edit)
+        </tr>
     }
 </table>  
 }
 
-@helper HRow(XElement r, XElement[] headerelements, string id, string iprop, string rtype, bool edit)
+@helper HRow(XElement r, string eid, XElement[] headerelements, string id, string iprop, string rtype, bool edit)
 {
-    string eid = r.Attribute("id").Value;
     XElement[] rowelements = r.Elements().ToArray(); 
-    <tr id='@eid'>
-    @for (int i=0; i<rowelements.Length; i++)
+    for (int i=0; i<rowelements.Length; i++)
     {
         XElement cr = rowelements[i];
         XElement f = headerelements[i];
@@ -91,9 +92,9 @@
         </td>
         }
     }
-    @if (edit)
+    if (edit)
     {
-        <td>@Ajax.ActionLink("edit", "EditForm", new { bid = id, eid = eid, etype=rtype, iprop=iprop, nc=r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+        <td>@Ajax.ActionLink("edit", "EditForm", new { firsttime=true, bid = id, eid = eid, etype=rtype, iprop=iprop, nc=r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
             {
                 HttpMethod = "Post",
                 InsertionMode = InsertionMode.Replace,
@@ -101,7 +102,6 @@
             })
         </td>
     }
-    </tr>
 }
 <!-- ================= Начало построения ================= -->
 <div>@Model.typelabel</div>

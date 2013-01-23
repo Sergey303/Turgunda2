@@ -78,7 +78,7 @@
                     }
                 }
                 //XAttribute prop_att = c.Attribute("prop"); //prop_att != null && prop_att.Value == sema2012m.ONames.p_name)
-                if (isfirst) 
+                if (!string.IsNullOrEmpty(val) && isfirst) 
                 {
                     isfirst = false;
                 <a href="?id=@d_id">@val</a>
@@ -103,6 +103,8 @@
         </td>
     }
 }
+
+
 <!-- ================= Начало построения ================= -->
 <div>@Model.typelabel</div>
 @if (Model.uri == null)

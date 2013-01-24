@@ -170,7 +170,7 @@ namespace Turgunda2.Controllers
                     string p_id = parts[1];
                     string p_name = parts[2];
                     rmodel.SetPValue(ind, p_id);
-                    rmodel.SetFValue(ind, p_name);
+                    rmodel.SetVValue(ind, p_name);
                     rmodel.CalculateFormat();
                 }
                 else if (rmodel.command != null && rmodel.command == "SetVariantNew")
@@ -181,7 +181,7 @@ namespace Turgunda2.Controllers
                     string p_name = parts[2];
                     string nid = StaticObjects.CreateNewItem(p_name, p_type, User.Identity.Name);
                     rmodel.SetPValue(ind, nid);
-                    rmodel.SetFValue(ind, p_name);
+                    rmodel.SetVValue(ind, p_name);
                     rmodel.CalculateFormat();
                 }
                 else

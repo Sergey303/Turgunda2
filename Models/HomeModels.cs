@@ -350,7 +350,7 @@ namespace Turgunda2.Models
                                     .FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name);
                                 if (ref_name_el != null)
                                 {
-                                    SetFValue(i, ref_name_el.Value);
+                                    SetVValue(i, ref_name_el.Value);
                                     SetPValue(i, rec.Attribute("id").Value);
                                     SetTValue(i, t_att.Value);
                                 }
@@ -387,6 +387,28 @@ namespace Turgunda2.Models
         public string f_18 { get; set; }
         public string f_19 { get; set; }
         public string f_20 { get; set; }
+
+        public string v_0 { get; set; }
+        public string v_1 { get; set; }
+        public string v_2 { get; set; }
+        public string v_3 { get; set; }
+        public string v_4 { get; set; }
+        public string v_5 { get; set; }
+        public string v_6 { get; set; }
+        public string v_7 { get; set; }
+        public string v_8 { get; set; }
+        public string v_9 { get; set; }
+        public string v_10 { get; set; }
+        public string v_11 { get; set; }
+        public string v_12 { get; set; }
+        public string v_13 { get; set; }
+        public string v_14 { get; set; }
+        public string v_15 { get; set; }
+        public string v_16 { get; set; }
+        public string v_17 { get; set; }
+        public string v_18 { get; set; }
+        public string v_19 { get; set; }
+        public string v_20 { get; set; }
 
         public string p_0 { get; set; }
         public string p_1 { get; set; }
@@ -457,6 +479,34 @@ namespace Turgunda2.Models
                 case 18: f_18 = s; break;
                 case 19: f_19 = s; break;
                 case 20: f_20 = s; break;
+                default: break;
+            }
+        }
+        public void SetVValue(int i, string s)
+        {
+            switch (i)
+            {
+                case 0: v_0 = s; break;
+                case 1: v_1 = s; break;
+                case 2: v_2 = s; break;
+                case 3: v_3 = s; break;
+                case 4: v_4 = s; break;
+                case 5: v_5 = s; break;
+                case 6: v_6 = s; break;
+                case 7: v_7 = s; break;
+                case 8: v_8 = s; break;
+                case 9: v_9 = s; break;
+                case 10: v_10 = s; break;
+                case 11: v_11 = s; break;
+                case 12: v_12 = s; break;
+                case 13: v_13 = s; break;
+                case 14: v_14 = s; break;
+                case 15: v_15 = s; break;
+                case 16: v_16 = s; break;
+                case 17: v_17 = s; break;
+                case 18: v_18 = s; break;
+                case 19: v_19 = s; break;
+                case 20: v_20 = s; break;
                 default: break;
             }
         }
@@ -541,6 +591,35 @@ namespace Turgunda2.Models
                 case 18: return f_18;
                 case 19: return f_19;
                 case 20: return f_20;
+                default: break;
+            }
+            return null;
+        }
+        public string GetVValue(int i)
+        {
+            switch (i)
+            {
+                case 0: return v_0;
+                case 1: return v_1;
+                case 2: return v_2;
+                case 3: return v_3;
+                case 4: return v_4;
+                case 5: return v_5;
+                case 6: return v_6;
+                case 7: return v_7;
+                case 8: return v_8;
+                case 9: return v_9;
+                case 10: return v_10;
+                case 11: return v_11;
+                case 12: return v_12;
+                case 13: return v_13;
+                case 14: return v_14;
+                case 15: return v_15;
+                case 16: return v_16;
+                case 17: return v_17;
+                case 18: return v_18;
+                case 19: return v_19;
+                case 20: return v_20;
                 default: break;
             }
             return null;

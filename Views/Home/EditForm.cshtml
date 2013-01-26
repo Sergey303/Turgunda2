@@ -1,0 +1,142 @@
+﻿@using System.Xml.Linq
+@model Turgunda2.Models.RecordModel
+@{
+    if (Model == null) { return; }
+    //XElement xresult = Model.GetXResult();
+    //if (xresult == null) { return; }
+    XElement[] header = Model.GetHeaderFlow().ToArray();
+    //XElement[] row = xresult.Element("r").Elements().ToArray();
+    string urlcancel = Url.Content("~/Home/Portrait?id=" + Model.bid);
+}
+
+<td colspan="@Model.nc">
+@using (Ajax.BeginForm("EditForm", "Home", Model,
+    new AjaxOptions() { HttpMethod = "Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace }))
+{
+    @*
+    @Html.Hidden("bid", Model.bid)
+    @Html.Hidden("eid", Model.eid)
+    @Html.Hidden("etype", Model.etype)
+    @Html.Hidden("iprop", Model.iprop)
+    @Html.Hidden("nc", Model.nc)
+    *@
+    <table width="100%" style="border-width:thin; border-style:dashed; border-color:Black;">
+    @for (int i = 0; i < header.Length; i++)
+    {
+        XElement h = header[i];
+        //XElement c = row[i];
+        string fname = "f_" + i;
+        <tr>
+        @if (h.Name == "f")
+        {
+            bool istextarea = h.Attribute("prop").Value == "http://fogid.net/o/description" ||
+                h.Attribute("prop").Value == "http://fogid.net/o/doc-content";
+            <td>@h.Value</td>
+            <td>
+            @if (istextarea)
+            {
+                @*<textarea name="@fname" rows="6" cols="60">@c.Value</textarea>*@
+                @Html.TextArea(fname, new { rows = 5, cols = 50 })
+            }
+            else
+            {
+                XAttribute valueTypeAtt = h.Attribute("valueType");
+                if (valueTypeAtt != null)
+                {
+                    string stvalue = Model.GetFValue(i);
+                    var variants = Turgunda2.Models.Common.GetEnumStates(valueTypeAtt.Value)
+                        .Select(st => new SelectListItem()
+                        {
+                            Selected = st.Attribute("value").Value == stvalue ? true : false,
+                            Value = st.Attribute("value").Value,
+                            Text = st.Value
+                        }).ToList();
+                    @Html.DropDownList(fname, variants, "", new { style = "font-size:small;" });
+                }
+                else
+                {
+                @Html.TextBox(fname)
+                }
+                @*<input name="@fname" value="@c.Value" />*@
+            }
+            </td>
+        }
+        else if (h.Name == "d")
+        {
+            string text_value = "";
+            <td>@h.Element("label").Value</td>
+            <td>
+            @if (Model.GetPValue(i) != null)
+            {
+                @Html.Hidden("v_" + i)
+                @Html.Hidden("d_" + i)
+                @Html.Hidden("t_" + i)
+                text_value = Model.GetVValue(i);
+                <span style="color:blue;">@text_value</span>
+            }
+            else
+            {
+                string[] types = h.Elements("r").Select(rr => rr.Attribute("type").Value).ToArray();
+                if (types.Length == 0)
+                {
+                    // Если будет так, то это ошибка, пока не знаю как ее обрабатывать
+                }
+                else if (types.Length == 1)
+                {
+                    @Html.Hidden("t_" + i, types[0])
+                }
+                else
+                {
+                    @Html.DropDownList("t_" + i,
+                        types.Select(str => new SelectListItem()
+                        {
+                            Text = Turgunda2.Models.Common.OntNames[str],
+                            Value = str
+                        }))
+                }
+                @Html.TextBox(fname, null, new { style = "background-color:#e0eeff;" })
+                object searchindexobj = ViewData["searchindex"];
+                if (searchindexobj != null)
+                {
+                    int searchindex = (int)searchindexobj;
+                    if (searchindex == i)
+                    {
+                        Turgunda2.Models.SearchResult[] searchresults = (Turgunda2.Models.SearchResult[])ViewData["searchresults"];
+                        foreach (Turgunda2.Models.SearchResult sr in searchresults)
+                        {
+                                <div>
+                                @{ 
+                                    Model.command = "SetVariant"; 
+                                    Model.exchange = "" + i + "|" + sr.id + "|" + sr.value; 
+                                }
+                                @Ajax.ActionLink(sr.value, "EditForm", "Home", Model , new AjaxOptions() {
+                                     HttpMethod="Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace
+                                    })
+                                </div>
+                        }
+                        Model.command = "SetVariantNew";
+                        Model.exchange = "" + i + "|" + Model.GetTValue(i) + "|" + Model.GetFValue(i); 
+                        
+                        <div>[
+                            @Ajax.ActionLink("нов.", "EditForm", "Home", Model , new AjaxOptions() {
+                                    HttpMethod="Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace
+                                })
+                        ]</div>
+                    }
+                }
+
+            }
+            </td>
+        }
+        </tr>
+    }
+        <tr>
+            <td colspan="2">
+                <input type="submit" name="chk" value="chk" />
+                <input type="submit" name="ok" value="ok" />
+                <a href="@urlcancel">Cancel</a>
+           </td>
+        </tr>
+    </table>
+}    
+</td>

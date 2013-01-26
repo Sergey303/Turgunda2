@@ -1,0 +1,15 @@
+﻿@model Turgunda2.Models.ConvertModel
+
+@{
+    ViewBag.Title = "Convert";
+}
+
+<h2>Convert</h2>
+@using (Html.BeginForm(Model))
+{
+    <span>index: </span>
+    @Html.TextBoxFor(model => model.entityid)
+    <span>idvalue: @Model.entityvalue</span>
+    @*Html.TextBoxFor(model => model.entityvalue)*@
+    <input type="submit" value="Convert" />
+}

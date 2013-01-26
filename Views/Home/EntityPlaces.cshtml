@@ -1,0 +1,22 @@
+﻿@model Turgunda2.Models.EntityPlacesModel
+
+@{
+    ViewBag.Title = "EntityPlaces";
+}
+
+<h2>EntityPlaces</h2>
+@using (Html.BeginForm())
+{
+    <span>entity: </span>
+    @Html.TextBoxFor(model => model.entityvalue)
+    <input type="submit" value="Convert" />
+}
+@if (Model.places != null)
+{
+    foreach (KeyValuePair<string, string> pair in Model.places)
+    {
+        <div>
+            @pair.Key : @pair.Value
+        </div>
+    }
+}

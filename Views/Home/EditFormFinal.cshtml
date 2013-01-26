@@ -46,7 +46,7 @@
     }
 }
 
-if (edit)
+@if (edit)
 {
     <td>@Ajax.ActionLink("edit", "EditForm", new { firsttime=true, bid = Model.bid, eid = Model.eid, 
        etype=Model.etype, iprop=Model.iprop, nc=Model.nc, d = System.DateTime.Now.Ticks }, new AjaxOptions()

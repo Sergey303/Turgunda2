@@ -109,7 +109,6 @@
     <Content Include="Content\themes\base\jquery.ui.slider.css" />
     <Content Include="Content\themes\base\jquery.ui.tabs.css" />
     <Content Include="Content\themes\base\jquery.ui.theme.css" />
-    <Content Include="Diary.txt" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\jquery-1.5.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.5.1.js" />
@@ -142,7 +141,6 @@
     <Content Include="Views\Shared\_LogOnPartial.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Web.config" />
-    <Content Include="XMLFile1.xml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Home\PortraitSpecial.cshtml" />

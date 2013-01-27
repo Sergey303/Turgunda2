@@ -81,8 +81,9 @@
                 //XAttribute prop_att = c.Attribute("prop"); //prop_att != null && prop_att.Value == sema2012m.ONames.p_name)
                 if (!string.IsNullOrEmpty(val) && isfirst) 
                 {
+                    string url = Url.Content("~/Home/Portrait?id=" + d_id);
                     isfirst = false;
-                <a href="?id=@d_id">@val</a>
+                <a href="@url">@val</a>
                 }
                 else
                 {
@@ -127,8 +128,10 @@ else
     string url = Url.Content("~/Docs/GetPhoto?s=medium&u=" + Model.uri);
     <img src="@url" />
 }
-
-@HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit, false)
+@{
+    bool hasinverse = Model.xresult.Elements("ip").SelectMany(ip => ip.Elements("ir")).Any(ir => ir.Element("r") != null);
+}
+@HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit, !hasinverse)
 
 @if (edit)
 {
@@ -136,7 +139,7 @@ else
 <div>
   @foreach (XElement ip in query)
   {
-      //if (ip.Elements("ir").Any((XElement ir) => ir.Elements("r")))
+      if (ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
       string label = ip.Element("label").Value;
       XElement[] irs = ip.Elements("ir").ToArray();
       if (irs.Length == 0) { continue; }
@@ -169,15 +172,35 @@ else
 <table>
 @foreach (XElement ip in @Model.xresult.Elements("ip"))
 {
-    if (ip.Element("ir").Elements("r").Count() == 0) { continue; }
+    if (!ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
+    var qu = ip.Elements("ir").Where(ir => ir.Elements("r").Count() == 0);
+        //.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
+    
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
         <td>
+        @if (qu.Count() > 0)
+        {
+            bool needblank = false;
+            //var qu1 = qu.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
+            <div>
+            @foreach (XElement irr in qu) 
+            {
+                string label = irr.Element("label").Value;
+                string type_id = irr.Attribute("type").Value;
+                if (needblank) { <span> </span> } else { needblank = true; }
+                @Html.ActionLink(label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })  
+            }
+            </div>
+        }
         @foreach (XElement ir in ip.Elements("ir"))
         {
             if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
-            <div>@ir.Element("label").Value</div>
+            string type_id = ir.Attribute("type").Value;
+            <div>@ir.Element("label").Value
+                [@Html.ActionLink("нов", "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })]
+            </div>
             if (view_att != null && view_att.Value == "largeicons")
             {
                 foreach (XElement r in ir.Elements("r"))

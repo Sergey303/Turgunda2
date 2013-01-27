@@ -7,7 +7,7 @@
     string id = Model.id;
 }
 
-@helper HTable(XElement container, string id, string iprop, string ttype, bool edit)
+@helper HTable(XElement container, string id, string iprop, string ttype, bool edit, bool candelete)
     {
         XElement[] headerelements = container.Element("header").Elements().ToArray();
 <table>
@@ -30,13 +30,13 @@
     {
         string eid = r.Attribute("id").Value;
         <tr id='@eid'>
-        @HRow(r, eid, headerelements, id, iprop, ttype, edit)
+        @HRow(r, eid, headerelements, id, iprop, ttype, edit, candelete)
         </tr>
     }
 </table>  
 }
 
-@helper HRow(XElement r, string eid, XElement[] headerelements, string id, string iprop, string rtype, bool edit)
+@helper HRow(XElement r, string eid, XElement[] headerelements, string id, string iprop, string rtype, bool edit, bool candelete)
 {
     XElement[] rowelements = r.Elements().ToArray(); 
     for (int i=0; i<rowelements.Length; i++)
@@ -101,6 +101,16 @@
                 InsertionMode = InsertionMode.Replace,
                 UpdateTargetId = eid
             })
+            @if (candelete) 
+            {
+                @Ajax.ActionLink("x", "DeleteRow", new { eid=eid, d=DateTime.Now.Ticks }, new AjaxOptions() 
+                {
+                    HttpMethod = "Get",
+                    InsertionMode = InsertionMode.Replace,
+                    UpdateTargetId = eid,
+                    Confirm = "Унчтожить?"
+                }) 
+            }
         </td>
     }
 }
@@ -118,7 +128,7 @@ else
     <img src="@url" />
 }
 
-@HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit)
+@HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit, false)
 
 @if (edit)
 {
@@ -214,7 +224,9 @@ else
             }
             else
             {
-                @HTable(ir, id, ip.Attribute("prop").Value, ir.Attribute("type").Value, edit)
+                string prop = ip.Attribute("prop").Value;
+                bool candelete = prop != sema2012m.ONames.p_father && prop != sema2012m.ONames.p_mother; 
+                @HTable(ir, id, prop, ir.Attribute("type").Value, edit && candelete, candelete)
             }
         }
         </td>

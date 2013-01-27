@@ -159,7 +159,7 @@ namespace Turgunda2.Controllers
                             return (XElement)null;
                         }));
                      // Пошлем эту запись на изменение
-                    StaticObjects.ChangeItem(record, User.Identity.Name);
+                    StaticObjects.PutItemToDb(record, false, User.Identity.Name);
 
                     return PartialView("EditFormFinal", rmodel);
                 }
@@ -198,6 +198,11 @@ namespace Turgunda2.Controllers
             //Turgunda2.Models.RecordModel rmodel = new Models.RecordModel();
             //return PartialView("EditForm", rmodel);
             return EditForm(rmodel);
+        }
+        public PartialViewResult DeleteRow(string eid)
+        {
+            StaticObjects.DeleteItem(eid, User.Identity.Name);
+            return PartialView();
         }
 
         /// ==================  Вспомогательные и отладочные входы =================

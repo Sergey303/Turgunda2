@@ -176,24 +176,26 @@ namespace Turgunda2
             }
             return resu;
         }
-        // Возвращает идентификатор созданного айтема или null
-        public static string CreateNewItem(string name, string type, string username)
-        {
-            if (type == null || string.IsNullOrEmpty(name)) return null;
-            XElement xrecord = CreateNewXRecordAndSave(type, username, new XElement(sema2012m.ONames.tag_name, name));
-
-            engine.ReceiveXCommand(xrecord);
-            
-            return xrecord.Attribute(sema2012m.ONames.rdfabout).Value;
-        }
-        public static void ChangeItem(XElement item, string username)
+        /// <summary>
+        /// Базовый метод. Помещает айтем, включая и операторы, в обе базы данных. Если требуется, то формирует идентификатор
+        /// </summary>
+        /// <param name="item">Айтем в "стандартном" виде. В записи допустимо отсуттсвие rdf:about, тогда tocreate Должен быть true</param>
+        /// <param name="tocreateid">нужно ли создавать для записи новый идентификатор</param>
+        /// <param name="username">идентификатор пользователя</param>
+        /// <returns>скорректированный элемент, помещаенный в базы данных</returns>
+        public static XElement PutItemToDb(XElement item, bool tocreateid, string username)
         {
             factograph.RDFDocumentInfo docinfo = CassetteKernel.CassettesConnection.docsInfo
                 .Select(pair => pair.Value)
                 .FirstOrDefault(di => di.isEditable && di.owner == username);
             if (docinfo == null) { }
-
+            if (tocreateid)
+            {
+                string id = docinfo.NextId();
+                item.Add(new XAttribute(sema2012m.ONames.rdfabout, id));
+            }
             XElement item_corrected = engine.ReceiveXCommand(item);
+            if (item_corrected == null) item_corrected = new XElement(item);
 
             item_corrected.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("u")));
             // Внедрить и сохранить
@@ -201,46 +203,38 @@ namespace Turgunda2
             docinfo.isChanged = true;
             docinfo.Save();
             // Тут еще в лог изменений надо записать
-        }
-
-        private static XElement CreateNewXRecordAndSave(string type, string username, params object[] content) // В content помещается содержимое записи
-        {
-            factograph.RDFDocumentInfo docinfo = CassetteKernel.CassettesConnection.docsInfo
-                .Select(pair => pair.Value)
-                .FirstOrDefault(di => di.isEditable && di.owner == username);
-            if (docinfo == null) { }
-            XName xn = GetXName(type);
-            string id = docinfo.NextId();
-            XElement xrecord = new XElement(xn, new XAttribute(sema2012m.ONames.rdfabout, id), content);
-            xrecord.Add(new XAttribute(sema2012m.ONames.AttModificationTime, DateTime.Now.ToUniversalTime().ToString("u")));
-            // Внедрить и сохранить
-            docinfo.GetRoot().Add(new XElement(xrecord)); // Делаю клона и записываю в фог-документ
-            docinfo.isChanged = true;
-            docinfo.Save();
             // Добавить служебные поля и сохранить в логе
             //xrecord.Add(new XAttribute("dbid", docinfo.dbId));
             //xrecord.Add(new XAttribute("sender", docinfo.owner));
             // Запомнить действие в логе изменений и синхронизовать(!)
             //changelog(xrecord.ToString()); // ========== СДЕЛАТЬ!
-
-            return xrecord;
+            return item_corrected;
         }
 
-        private static XName GetXName(string type) // Надо переместить метод в ONames
+        // Возвращает идентификатор созданного айтема или null
+        public static string CreateNewItem(string name, string type, string username)
         {
-            int pos = type.LastIndexOfAny(new char[] { '/', '#' });
-            if (pos == -1) { throw new Exception("Error: strange construction of type string: " + type); }
-            XName xn = XName.Get(type.Substring(pos + 1), type.Substring(0, pos + 1));
-            return xn;
+            if (type == null || string.IsNullOrEmpty(name)) return null;
+            XElement xrecord = PutItemToDb(new XElement(sema2012m.ONames.GetXName(type), new XElement(sema2012m.ONames.tag_name, name)),
+                true, username); 
+
+            return xrecord.Attribute(sema2012m.ONames.rdfabout).Value;
         }
+        public static void DeleteItem(string id, string username)
+        {
+            //engine.DeleteRecord(id);
+            PutItemToDb(new XElement(sema2012m.ONames.TagDelete, new XAttribute(sema2012m.ONames.AttItem_id, id)),
+                false, username);
+        }
+
         public static string AddInvRelation(string eid, string prop, string rtype, string username)
         {
             //if (rtype == null || string.IsNullOrEmpty(eid)) return;
-            XElement xrecord = CreateNewXRecordAndSave(rtype, username, 
-                new XElement(GetXName(prop), 
-                    new XAttribute(sema2012m.ONames.rdfresource, eid)));
+            XElement xrecord = PutItemToDb(new XElement(sema2012m.ONames.GetXName(rtype),
+                new XElement(sema2012m.ONames.GetXName(prop),
+                    new XAttribute(sema2012m.ONames.rdfresource, eid))),
+                true, username);
 
-            engine.ReceiveXCommand(xrecord);
             return xrecord.Attribute(sema2012m.ONames.rdfabout).Value;
         }
 

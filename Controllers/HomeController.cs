@@ -19,6 +19,23 @@ namespace Turgunda2.Controllers
         public ActionResult Portrait(string id)
         {
             Models.PortraitModel pmodel = new Models.PortraitModel(id);
+            // Фиксирование коллекции в сессии
+            if (pmodel.type_id == sema2012m.ONames.FOG + "collection")
+            {
+                pmodel.doclist = null;
+                var qu = pmodel.xtree.Elements("inverse").Where(inv => inv.Attribute("prop").Value == sema2012m.ONames.p_incollection)
+                    .Select(inv => inv.Element("record"))
+                    .Select(re => re.Elements("direct").FirstOrDefault(di => di.Attribute("prop").Value == sema2012m.ONames.p_collectionitem))
+                    .Where(di => di != null)
+                    .Select(di => di.Element("record").Attribute("id").Value).ToArray();
+
+                Session["doclist"] = qu;
+            }
+            else
+            {
+                pmodel.doclist = (string[])Session["doclist"];
+            }
+
             return View(pmodel);
         }
         public ActionResult Search(string searchstring, string type) 

@@ -70,9 +70,12 @@ namespace Turgunda2.Models
         public string typelabel;
         public string name;
         public string uri = null;
+        public string[] doclist = null; // Это для размещение списка идентификаторов документов по некоторой "оси"
         public XElement xresult;
+        // Для всяких дел:
         public XElement look;
         public string message;
+        public XElement xtree;
         // По идентификатору мы получаем 1) откорректированный идентификатор; 2) тип записи; 3) формат (раскрытия) записи
         // Эту информацию дополняем меткой типа, пытаемся прочитать и зафиксировать имя записи и uri документного контента
         public PortraitModel(string id)
@@ -83,7 +86,7 @@ namespace Turgunda2.Models
             this.typelabel = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.typelabel == null) this.typelabel = type_id;
             // Получим портретное х-дерево
-            XElement xtree = StaticObjects.GetItemById(id, rec_format);
+            this.xtree = StaticObjects.GetItemById(id, rec_format);
             // По дереву вычислим и зафиксируем остальные поля
             // поле идентификатора
             this.id = xtree.Attribute("id").Value;

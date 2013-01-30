@@ -424,6 +424,16 @@
 					</direct>
 				</record>
 			</inverse>
+			<inverse prop="http://fogid.net/o/inDocument">
+				<record type="http://fogid.net/o/DocumentPart">
+					<field prop="http://fogid.net/o/pageNumbers"/>
+					<direct prop="http://fogid.net/o/partItem">
+						<record type="http://fogid.net/o/photo-doc">
+							<field prop="http://fogid.net/o/name"/>
+						</record>
+					</direct>
+				</record>
+			</inverse>
 			<inverse prop="http://fogid.net/o/in-doc">
 				<record type="http://fogid.net/o/reflection">
 					<direct prop="http://fogid.net/o/reflected">

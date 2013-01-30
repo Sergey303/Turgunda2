@@ -125,8 +125,26 @@
 }
 else
 {
+    string[] doclist = Model.doclist;
     string url = Url.Content("~/Docs/GetPhoto?s=medium&u=" + Model.uri);
     <img src="@url" />
+    if (doclist != null)
+    {
+        var pair = doclist.Select((s, i) => new { s = s, i = i }).FirstOrDefault(si => si.s == id);
+        if (pair != null) 
+        {
+            int ind = pair.i;
+            string urlprev = ind <= 0 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind-1]);
+            string urlnext = ind >= doclist.Length - 1 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind+1]);
+            <div>
+                @if(urlprev != null) { <a href="@urlprev">пред.</a> }
+                else { <span>пред.</span>} 
+                <span> </span>
+                @if(urlnext != null) { <a href="@urlnext">след.</a> }
+                else { <span>след.</span>} 
+            </div>
+        }
+    }
 }
 @{
     bool hasinverse = Model.xresult.Elements("ip").SelectMany(ip => ip.Elements("ir")).Any(ir => ir.Element("r") != null);
@@ -174,7 +192,7 @@ else
 {
     if (!ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
     var qu = ip.Elements("ir").Where(ir => ir.Elements("r").Count() == 0);
-        //.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
+    //.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
     
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
@@ -184,11 +202,13 @@ else
             bool needblank = false;
             //var qu1 = qu.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
             <div>
-            @foreach (XElement irr in qu) 
+            @foreach (XElement irr in qu)
             {
                 string label = irr.Element("label").Value;
                 string type_id = irr.Attribute("type").Value;
-                if (needblank) { <span> </span> } else { needblank = true; }
+                if (needblank)
+                { <span> </span> }
+                else { needblank = true; }
                 @Html.ActionLink(label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })  
             }
             </div>

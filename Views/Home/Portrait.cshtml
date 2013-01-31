@@ -242,10 +242,22 @@ else
                             string rid = rid_att.Value;
                             string rty = rty_att.Value;
                             XAttribute uri_att = fr.Attribute("uri");
+                            url = "?id=" + rid;
                             if (uri_att != null)
                             {
                                 src = Url.Content("~/Docs/GetPhoto?s=small&u=" + uri_att.Value);
-                                url = "?id=" + rid;
+                            }
+                            else
+                            {
+                                Dictionary<string,string> icons = new Dictionary<string,string>();
+                                icons.Add(sema2012m.ONames.FOG + "document", "document_m.jpg");
+                                icons.Add(sema2012m.ONames.FOG + "photo-doc", "photo_m.jpg");
+                                icons.Add(sema2012m.ONames.FOG + "video-doc", "video_m.jpg");
+                                icons.Add(sema2012m.ONames.FOG + "audio-doc", "audio_m.jpg");
+                                icons.Add(sema2012m.ONames.FOG + "collection", "collection_m.jpg");
+                                
+                                src = Url.Content("~/PublicuemCommon/icons/medium/" + 
+                                    (icons.ContainsKey(rty)? icons[rty] : "default_m.jpg"));
                             }
                             parts.AddRange(fr.Elements("c").Select(c => c.Value));
                         }
@@ -257,8 +269,14 @@ else
                 </a>
                 </div>
                 @if (parts.Count() > 0)
-                {
-                <div style="font-size:smaller;">@parts.Aggregate((sum, part) => sum + " | " + part)</div>
+                { int i = 0;
+                <div style="font-size:smaller;">
+                    @foreach (var part in parts)
+                    {
+                        string colo = i % 2 == 0 ? "White" : "Aqua"; i++;
+                        <span style="background-color:@colo;">@part</span>
+                    }
+                </div>
                 }
                 </div>
 

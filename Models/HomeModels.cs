@@ -109,7 +109,7 @@ namespace Turgunda2.Models
             this.xresult = ConvertToResultStructure(rec_format, xtree);
 
             this.message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
-            //this.look = xrecord;
+            //this.look = xtree;
         }
         public static string GetFormat(string id, out XElement rec_format)
         {
@@ -176,11 +176,11 @@ namespace Turgunda2.Models
         // где c стоят на позициях полей, а r - на позициях прямых отношений
         private static XElement GetRecordRow(XElement item, XElement frecord)
         {
-            IEnumerable<XElement> fieldsAndDirects = item.Elements().Where(el => el.Name == "field" || el.Name == "direct");
+            var fieldsAndDirects = item.Elements().Where(el => el.Name == "field" || el.Name == "direct");
             var inv_props_atts = frecord.Elements("inverse").Where(fel => fel.Attribute("attname") != null)
                 //.Select(fel => new { prop = fel.Attribute("prop").Value, attname = fel.Attribute("attname").Value })
                 .ToDictionary(fel => fel.Attribute("prop").Value, fel => fel.Attribute("attname").Value);
-            IEnumerable<XAttribute> atts = item.Elements("inverse")
+            var atts = item.Elements("inverse")
                 .Where(el => inv_props_atts.ContainsKey(el.Attribute("prop").Value))
                 .Select(el => new XAttribute(XName.Get(inv_props_atts[el.Attribute("prop").Value]), el.Value));
             XElement r = new XElement("r",
@@ -222,8 +222,8 @@ namespace Turgunda2.Models
                     if (direct == null || record == null) yield return new XElement("r");
                     else
                     {
-                        XElement f_rec = f_el.Element("record");
-                        if (frecord != null) yield return GetRecordRow(record, f_rec); // не знаю зачем проверка
+                        XElement f_rec = f_el.Elements("record").FirstOrDefault(re => re.Attribute("type").Value == record.Attribute("type").Value);
+                        if (frecord != null && f_rec != null) yield return GetRecordRow(record, f_rec); // не знаю зачем проверка
                     }
                 }
             }

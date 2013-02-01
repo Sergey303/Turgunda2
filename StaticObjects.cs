@@ -105,6 +105,7 @@ namespace Turgunda2
             Turgunda2.Models.Common.formats = appProfile.Element("formats");
             XElement ontology = XElement.Load(path + "PublicuemCommon/ontology_iis-v10-doc_ruen.xml");
             Turgunda2.Models.Common.LoadOntNamesFromOntology(ontology);
+            Turgunda2.Models.Common.LoadInvOntNamesFromOntology(ontology);
             // Инициализация или чистка кешей
             formatByIdCache = new Dictionary<string, XElement>(); // Надо бы этот кеш убрать!!! -- я убрал только его наполнение (.Add())!
 

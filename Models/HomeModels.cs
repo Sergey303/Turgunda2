@@ -27,6 +27,7 @@ namespace Turgunda2.Models
         };
         public static Dictionary<string, string> OntNames = new Dictionary<string, string>(
             OntPairs.ToDictionary(pa => pa[0], pa => pa[1]));
+        public static Dictionary<string, string> InvOntNames = new Dictionary<string, string>();
         private static XElement _ontology;
         public static void LoadOntNamesFromOntology(XElement ontology)
         {
@@ -41,6 +42,20 @@ namespace Turgunda2.Models
                 })
                 .ToDictionary(pa => pa.type_id, pa => pa.label);
             OntNames = ont_names;
+        }
+        public static void LoadInvOntNamesFromOntology(XElement ontology)
+        {
+            _ontology = ontology;
+            var i_ont_names = ontology.Elements("ObjectProperty")
+                //.Where(el => el.Name == "Class" || el.Name == "ObjectProperty" || el.Name == "DatatypeProperty")
+                .Where(el => el.Elements("inverse-label").Any())
+                .Select(el => new
+                {
+                    type_id = el.Attribute(ONames.rdfabout).Value,
+                    label = el.Elements("inverse-label").First(lab => lab.Attribute(ONames.xmllang).Value == "ru").Value
+                })
+                .ToDictionary(pa => pa.type_id, pa => pa.label);
+            InvOntNames = i_ont_names;
         }
         public static string GetEnumStateLabel(string enum_type, string state_value)
         {
@@ -109,7 +124,7 @@ namespace Turgunda2.Models
             this.xresult = ConvertToResultStructure(rec_format, xtree);
 
             this.message = "duration=" + ((DateTime.Now - tt0).Ticks / 10000L);
-            //this.look = xtree;
+            //this.look = xresult;
         }
         public static string GetFormat(string id, out XElement rec_format)
         {
@@ -145,11 +160,12 @@ namespace Turgunda2.Models
                 new XElement("header", ScanForHeaderFields(xformat)),
                 GetRecordRow(xtree, xformat),
                 null);
-            foreach (var f_inv in xformat.Elements("inverse"))
+            foreach (var f_inv in xformat.Elements("inverse").Where(inv => inv.Attribute("invisible")==null))
             {
                 string prop = f_inv.Attribute("prop").Value;
                 var queryForInverse = xtree.Elements("inverse").Where(el => el.Attribute("prop").Value == prop).ToArray();
-                XElement ip = new XElement("ip", new XAttribute("prop", prop), new XElement("label", Common.OntNames[prop]));
+                XElement ip = new XElement("ip", new XAttribute("prop", prop), new XElement("label", 
+                    (f_inv.Element("label")!=null ? f_inv.Element("label").Value :  Common.InvOntNames[prop])));
                 foreach (var f_rec in f_inv.Elements("record"))
                 {
                     XAttribute view_att = f_rec.Attribute("view");
@@ -159,7 +175,8 @@ namespace Turgunda2.Models
                     XElement ir = new XElement("ir", 
                         new XAttribute("type", recType),
                         view_att==null?null: new XAttribute(view_att),
-                        new XElement("label", Common.OntNames[recType]),
+                        new XElement("label", 
+                            (f_rec.Element("label")!=null ? f_rec.Element("label").Value : Common.OntNames[recType])),
                         new XElement("header", ScanForHeaderFields(f_rec)));
                     ip.Add(ir);
                     foreach (var v_rec in queryForRecords)

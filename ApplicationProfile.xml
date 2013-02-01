@@ -204,7 +204,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument" attname="uri" visible="none">
+			<inverse prop="http://fogid.net/o/forDocument" attname="uri" invisible="true">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 				</record>
@@ -236,6 +236,7 @@
 				</record>
 			</inverse>
 			<inverse prop="http://fogid.net/o/archive-item">
+				<label>хранится в</label>
 				<record type="http://fogid.net/o/archive-member">
 					<direct prop="http://fogid.net/o/in-archive">
 						<record type="http://fogid.net/o/archive">
@@ -278,7 +279,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument" attname="uri" visible="none">
+			<inverse prop="http://fogid.net/o/forDocument" attname="uri" invisible="true">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 					<field prop="http://fogid.net/o/docmetainfo"/>
@@ -346,7 +347,7 @@
 			<field prop="http://fogid.net/o/name"/>
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/forDocument" attname="uri" visible="none">
+			<inverse prop="http://fogid.net/o/forDocument" attname="uri" invisible="true">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 				</record>
@@ -414,7 +415,7 @@
 			<field prop="http://fogid.net/o/description"/>
 			<field prop="http://fogid.net/o/from-date"/>
 			<field prop="http://fogid.net/o/doc-content"/>
-			<inverse prop="http://fogid.net/o/forDocument" attname="uri" visible="none">
+			<inverse prop="http://fogid.net/o/forDocument" attname="uri" invisible="true">
 				<record type="http://fogid.net/o/FileStore">
 					<field prop="http://fogid.net/o/uri"/>
 					<field prop="http://fogid.net/o/contentType"/>
@@ -710,10 +711,13 @@
       <field prop="http://fogid.net/o/description"/>
       <field prop="http://fogid.net/o/from-date"/>
     </record>
-    <record type="http://fogid.net/o/cassette">
+    <record type="http://fogid.net/o/collection">
       <field prop="http://fogid.net/o/name"/>
     </record>
-    <record type="http://fogid.net/o/archive">
+	  <record type="http://fogid.net/o/cassette">
+		  <field prop="http://fogid.net/o/name"/>
+	  </record>
+	  <record type="http://fogid.net/o/archive">
       <field prop="http://fogid.net/o/name"/>
       <field prop="http://fogid.net/o/from-date"/>
     </record>

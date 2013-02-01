@@ -78,7 +78,6 @@
                         val = Turgunda2.Models.Common.GetEnumStateLabel(valueTypeAtt.Value, val);
                     }
                 }
-                //XAttribute prop_att = c.Attribute("prop"); //prop_att != null && prop_att.Value == sema2012m.ONames.p_name)
                 if (!string.IsNullOrEmpty(val) && isfirst) 
                 {
                     string url = Url.Content("~/Home/Portrait?id=" + d_id);
@@ -109,7 +108,7 @@
                     HttpMethod = "Get",
                     InsertionMode = InsertionMode.Replace,
                     UpdateTargetId = eid,
-                    Confirm = "Унчтожить?"
+                    Confirm = "Уничтожить?"
                 }) 
             }
         </td>
@@ -197,7 +196,7 @@ else
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
         <td>
-        @if (qu.Count() > 0)
+        @if (edit && qu.Count() > 0)
         {
             bool needblank = false;
             //var qu1 = qu.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
@@ -217,13 +216,16 @@ else
         {
             if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
-            string type_id = ir.Attribute("type").Value;
-            <div>@ir.Element("label").Value
-                [@Html.ActionLink("нов", "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })]
-            </div>
+            if (edit && (view_att == null || view_att.Value != "largeicons"))
+            {
+                string type_id = ir.Attribute("type").Value;
+                <div>@ir.Element("label").Value
+                    [@Html.ActionLink("нов", "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })]
+                </div>
+            }
             if (view_att != null && view_att.Value == "largeicons")
             {
-                foreach (XElement r in ir.Elements("r"))
+                foreach (XElement r in ir.Elements("r").OrderBy(rr => rr.Value))
                 {
                     string url = "";
                     string src = "";
@@ -307,3 +309,4 @@ else
 {
 <div>@Model.message</div>
 }
+

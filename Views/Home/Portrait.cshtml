@@ -244,7 +244,7 @@ else
                             string rid = rid_att.Value;
                             string rty = rty_att.Value;
                             XAttribute uri_att = fr.Attribute("uri");
-                            url = "?id=" + rid;
+                            url = Url.Content("~/Home/Portrait?id=" + rid); //"?id=" + rid;
                             if (uri_att != null)
                             {
                                 src = Url.Content("~/Docs/GetPhoto?s=small&u=" + uri_att.Value);

@@ -21,6 +21,10 @@
             <td >
                 <div style="width:200px;">
                     <div><a href="@Url.Content("~/Home/Index")">Начало</a></div>
+                    @if (User.IsInRole("user"))
+                    {
+                    <div><a href="@Url.Content("~/Home/Index?name=" + User.Identity.Name)">Моё</a></div>
+                    }
                     @if (User.IsInRole("admin"))
                     {
                     <div><a href="@Url.Content("~/Home/LoadDb")">Загрузки</a></div>

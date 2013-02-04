@@ -433,11 +433,16 @@
 				</record>
 			</inverse>
 			<inverse prop="http://fogid.net/o/inDocument">
-				<record type="http://fogid.net/o/DocumentPart">
+				<record type="http://fogid.net/o/DocumentPart" view="largeicons">
 					<field prop="http://fogid.net/o/pageNumbers"/>
 					<direct prop="http://fogid.net/o/partItem">
 						<record type="http://fogid.net/o/photo-doc">
 							<field prop="http://fogid.net/o/name"/>
+							<inverse prop="http://fogid.net/o/forDocument" attname="uri">
+								<record type="http://fogid.net/o/FileStore">
+									<field prop="http://fogid.net/o/uri"/>
+								</record>
+							</inverse>
 						</record>
 					</direct>
 				</record>

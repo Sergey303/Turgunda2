@@ -11,8 +11,19 @@ namespace Turgunda2.Controllers
     {
         public ActionResult Index()
         {
-            ViewBag.Message = "Welcome to ASP.NET MVC!";
-
+            if (User.IsInRole("user")) 
+            {
+                string name = Request.Params["name"];
+                if (name != null)
+                {
+                    var recs = StaticObjects.SearchByName(name).ToArray();
+                    if (recs.Count() == 1)
+                    {
+                        string id = recs[0].Attribute("id").Value;
+                        return RedirectToAction("Portrait", new { id = id });
+                    }
+                }
+            }
             return View();
         }
 

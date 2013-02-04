@@ -118,6 +118,11 @@ namespace Turgunda2
         {
             var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().Select(d => d.filePath).ToArray();
             engine.LoadFromCassettesExpress(fogfilearr, turlog, turlog);
+            // Загрузка дополнительных элементов, в частности - корневой коллекции
+            engine.ReceiveXCommand(
+                new XElement(XName.Get("collection", sema2012m.ONames.FOG),
+                    new XAttribute(sema2012m.ONames.rdfabout, "cassetterootcollection"),
+                    new XElement(sema2012m.ONames.tag_name, new XAttribute(sema2012m.ONames.xmllang, "ru"), "Кассеты")));
         }
 
         // =========== Основные процедуры ==========

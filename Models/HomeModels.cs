@@ -386,6 +386,7 @@ namespace Turgunda2.Models
         // Отладочная структура
         public XElement look = null;
 
+        public const int nfields = 21;
         public string f_0 { get; set; }
         public string f_1 { get; set; }
         public string f_2 { get; set; }

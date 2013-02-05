@@ -109,11 +109,11 @@ namespace Turgunda2.Controllers
             string nid = StaticObjects.CreateNewItem(searchstring, type, User.Identity.Name);
             return RedirectToAction("Portrait", "Home", new { id = nid });
         }
-        public ActionResult AddInvRelation(string eid, string prop, string rtype)
+        public ActionResult AddInvRelation(string bid, string prop, string rtype)
         {
-            StaticObjects.AddInvRelation(eid, prop, rtype, User.Identity.Name);
+            StaticObjects.AddInvRelation(bid, prop, rtype, User.Identity.Name);
             //string nid = StaticObjects.CreateNewItem(searchstring, type, User.Identity.Name);
-            return RedirectToAction("Portrait", "Home", new { id = eid });
+            return RedirectToAction("Portrait", "Home", new { id = bid });
         }
         /// <summary>
         /// EditForm вычисляет (строит, корректирует) модель записи и направляет ее на View построения фрагмента редактирования.
@@ -129,14 +129,29 @@ namespace Turgunda2.Controllers
         {
             string chk = Request.Params["chk"]; // проверка ОДНОЙ введенной связи
             string ok = Request.Params["ok"]; // фиксация изменений, запоминание в БД
+            string canc = Request.Params["canc"]; // Отмена редактирования
             //Turgunda2.Models.RecordModel rm = new Models.RecordModel(id, eid, etype, iprop, nc);
             if (rmodel.firsttime)
             { // формирование формы редактирования
                 rmodel.firsttime = false;
+                bool replacemode = true;
+                if (rmodel.eid == "create888")
+                {
+                    string eid = StaticObjects.AddInvRelation(rmodel.bid, rmodel.iprop, rmodel.etype, User.Identity.Name);
+                    rmodel.eid = eid;
+                    replacemode = false;
+                }
                 rmodel.LoadFromDb();
                 rmodel.MakeLocalRecord();
-                XElement[] arr = rmodel.GetHeaderFlow().ToArray();
+                //XElement[] arr = rmodel.GetHeaderFlow().ToArray();
                 //rmodel.MakeXResult();
+                if (!replacemode) ViewData["insertnewrelation"] = rmodel.eid;
+            }
+            else if (canc != null)
+            {
+                rmodel.LoadFromDb();
+                rmodel.MakeLocalRecord();
+                return PartialView("EditFormFinal", rmodel);
             }
             else
             { // Собирание данных из реквеста
@@ -156,7 +171,7 @@ namespace Turgunda2.Controllers
                             if (!string.IsNullOrEmpty(rmodel.GetPValue(ind))) return false;
                             return true;
                         });
-                    if (pair != null) 
+                    if (pair != null)
                     {
                         int ind = pair.ind;
                         // Ничего проверять не буду
@@ -171,7 +186,7 @@ namespace Turgunda2.Controllers
                     XElement record = new XElement(sema2012m.ONames.GetXName(rmodel.etype),
                         new XAttribute(sema2012m.ONames.rdfabout, rmodel.eid),
                         hrows.Select((fd, ind) => new { fd = fd, ind = ind })
-                        .Select(fdind => 
+                        .Select(fdind =>
                         {
                             XElement fd = fdind.fd;
                             int ind = fdind.ind;
@@ -179,7 +194,7 @@ namespace Turgunda2.Controllers
                             if (fd.Name == "f")
                             {
                                 string value = rmodel.GetFValue(ind);
-                                if (!string.IsNullOrEmpty(value)) 
+                                if (!string.IsNullOrEmpty(value))
                                     return new XElement(xprop, rmodel.GetFValue(ind)); // Надо определить еще нужен ли язык и какой
                             }
                             else if (fd.Name == "d")
@@ -191,8 +206,31 @@ namespace Turgunda2.Controllers
                             }
                             return (XElement)null;
                         }));
-                     // Пошлем эту запись на изменение
+                    // Пошлем эту запись на изменение
                     StaticObjects.PutItemToDb(record, false, User.Identity.Name);
+                    // Если эта запись является записью типа "DocumentPart", то фиксируем две величины:
+                    // ссылку inDocument и идентификатор, имеющийся "за" этой ссылкой
+                    if (record.Name.LocalName == "DocumentPart" && record.Name.NamespaceName == sema2012m.ONames.FOG)
+                    {
+                        var resource_el = record.Element(XName.Get("inDocument", sema2012m.ONames.FOG));
+                        if (resource_el != null)
+                        {
+                            string pvalue = resource_el.Attribute(sema2012m.ONames.rdfresource).Value;
+                            Session["inDocumentId"] = pvalue;
+                            int ind = 0;
+                            for (; ind < Turgunda2.Models.RecordModel.nfields; ind++)
+                                if (rmodel.GetPValue(ind) == pvalue) break;
+                            if (ind < Turgunda2.Models.RecordModel.nfields)
+                            {
+                                //var s1 = rmodel.GetFValue(ind);
+                                //var s2 = rmodel.GetPValue(ind);
+                                //var s3 = rmodel.GetTValue(ind);
+                                //var s4 = rmodel.GetVValue(ind);
+
+                                Session["inDocumentName"] = rmodel.GetVValue(ind);
+                            }
+                        }
+                    }
 
                     return PartialView("EditFormFinal", rmodel);
                 }

@@ -2,24 +2,25 @@
 @model Turgunda2.Models.RecordModel
 @{
     if (Model == null) { return; }
-    //XElement xresult = Model.GetXResult();
-    //if (xresult == null) { return; }
     XElement[] header = Model.GetHeaderFlow().ToArray();
-    //XElement[] row = xresult.Element("r").Elements().ToArray();
-    string urlcancel = Url.Content("~/Home/Portrait?id=" + Model.bid);
+    bool insertnew = ViewData["insertnewrelation"] != null;
 }
 
+@if (insertnew)
+{
+    <tr id="@Model.eid">@DrowTD(header)</tr>
+}
+else
+{
+    @DrowTD(header)
+}
+
+@helper DrowTD(XElement[] header)
+    {
 <td colspan="@Model.nc">
 @using (Ajax.BeginForm("EditForm", "Home", Model,
     new AjaxOptions() { HttpMethod = "Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace }))
 {
-    @*
-    @Html.Hidden("bid", Model.bid)
-    @Html.Hidden("eid", Model.eid)
-    @Html.Hidden("etype", Model.etype)
-    @Html.Hidden("iprop", Model.iprop)
-    @Html.Hidden("nc", Model.nc)
-    *@
     <table width="100%" style="border-width:thin; border-style:dashed; border-color:Black;">
     @for (int i = 0; i < header.Length; i++)
     {
@@ -57,7 +58,6 @@
                 {
                 @Html.TextBox(fname)
                 }
-                @*<input name="@fname" value="@c.Value" />*@
             }
             </td>
         }
@@ -106,21 +106,27 @@
                         {
                                 <div>
                                 @{ 
-                                    Model.command = "SetVariant"; 
-                                    Model.exchange = "" + i + "|" + sr.id + "|" + sr.value; 
+                            Model.command = "SetVariant";
+                            Model.exchange = "" + i + "|" + sr.id + "|" + sr.value; 
                                 }
-                                @Ajax.ActionLink(sr.value, "EditForm", "Home", Model , new AjaxOptions() {
-                                     HttpMethod="Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace
-                                    })
+                                @Ajax.ActionLink(sr.value, "EditForm", "Home", Model, new AjaxOptions()
+                           {
+                               HttpMethod = "Post",
+                               UpdateTargetId = Model.eid,
+                               InsertionMode = InsertionMode.Replace
+                           })
                                 </div>
                         }
                         Model.command = "SetVariantNew";
                         Model.exchange = "" + i + "|" + Model.GetTValue(i) + "|" + Model.GetFValue(i); 
                         
                         <div>[
-                            @Ajax.ActionLink("нов.", "EditForm", "Home", Model , new AjaxOptions() {
-                                    HttpMethod="Post", UpdateTargetId = Model.eid, InsertionMode = InsertionMode.Replace
-                                })
+                            @Ajax.ActionLink("нов.", "EditForm", "Home", Model, new AjaxOptions()
+                       {
+                           HttpMethod = "Post",
+                           UpdateTargetId = Model.eid,
+                           InsertionMode = InsertionMode.Replace
+                       })
                         ]</div>
                     }
                 }
@@ -134,9 +140,11 @@
             <td colspan="2">
                 <input type="submit" name="chk" value="chk" />
                 <input type="submit" name="ok" value="ok" />
-                <a href="@urlcancel">Cancel</a>
+                @*<a href="@urlcancel">Cancel</a>*@
+                <input type="submit" name="canc" value="cancel" />
            </td>
         </tr>
     </table>
 }    
 </td>
+}

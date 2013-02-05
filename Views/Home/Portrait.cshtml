@@ -9,8 +9,10 @@
 
 @helper HTable(XElement container, string id, string iprop, string ttype, bool edit, bool candelete)
     {
+        string bodyid = iprop == null ? "_headerid_" : "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_";
         XElement[] headerelements = container.Element("header").Elements().ToArray();
 <table>
+    <thead>
     <tr>
     @foreach (XElement f in headerelements)
     {
@@ -26,6 +28,8 @@
         <td></td>
     }
     </tr>
+    </thead>
+    <tbody id="@bodyid">
     @foreach (XElement r in container.Elements("r"))
     {
         string eid = r.Attribute("id").Value;
@@ -33,13 +37,14 @@
         @HRow(r, eid, headerelements, id, iprop, ttype, edit, candelete)
         </tr>
     }
+    </tbody>
 </table>  
 }
 
 @helper HRow(XElement r, string eid, XElement[] headerelements, string id, string iprop, string rtype, bool edit, bool candelete)
-{
-    XElement[] rowelements = r.Elements().ToArray(); 
-    for (int i=0; i<rowelements.Length; i++)
+    {
+    XElement[] rowelements = r.Elements().ToArray();
+    for (int i = 0; i < rowelements.Length; i++)
     {
         XElement cr = rowelements[i];
         XElement f = headerelements[i];
@@ -58,7 +63,7 @@
             string d_tid = d_ty == null ? "" : d_ty.Value;
             XElement fr = f.Elements("r").FirstOrDefault(rr => rr.Attribute("type").Value == d_tid);
             XElement[] frow = new XElement[0];
-            if (fr != null) 
+            if (fr != null)
             {
                 frow = fr.Elements("f").ToArray();
             }
@@ -73,12 +78,12 @@
                 if (j < frow.Length)
                 {
                     var valueTypeAtt = frow[j].Attribute("valueType");
-                    if (valueTypeAtt != null) 
+                    if (valueTypeAtt != null)
                     {
                         val = Turgunda2.Models.Common.GetEnumStateLabel(valueTypeAtt.Value, val);
                     }
                 }
-                if (!string.IsNullOrEmpty(val) && isfirst) 
+                if (!string.IsNullOrEmpty(val) && isfirst)
                 {
                     string url = Url.Content("~/Home/Portrait?id=" + d_id);
                     isfirst = false;
@@ -95,21 +100,21 @@
     }
     if (edit)
     {
-        <td>@Ajax.ActionLink("edit", "EditForm", new { firsttime=true, bid = id, eid = eid, etype=rtype, iprop=iprop, nc=r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+        <td>@Ajax.ActionLink("edit", "EditForm", new { firsttime = true, bid = id, eid = eid, etype = rtype, iprop = iprop, nc = r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+       {
+           HttpMethod = "Post",
+           InsertionMode = InsertionMode.Replace,
+           UpdateTargetId = eid
+       })
+            @if (candelete)
             {
-                HttpMethod = "Post",
-                InsertionMode = InsertionMode.Replace,
-                UpdateTargetId = eid
-            })
-            @if (candelete) 
-            {
-                @Ajax.ActionLink("x", "DeleteRow", new { eid=eid, d=DateTime.Now.Ticks }, new AjaxOptions() 
-                {
-                    HttpMethod = "Get",
-                    InsertionMode = InsertionMode.Replace,
-                    UpdateTargetId = eid,
-                    Confirm = "Уничтожить?"
-                }) 
+                @Ajax.ActionLink("x", "DeleteRow", new { eid = eid, d = DateTime.Now.Ticks }, new AjaxOptions()
+           {
+               HttpMethod = "Get",
+               InsertionMode = InsertionMode.Replace,
+               UpdateTargetId = eid,
+               Confirm = "Уничтожить?"
+           }) 
             }
         </td>
     }
@@ -130,17 +135,26 @@ else
     if (doclist != null)
     {
         var pair = doclist.Select((s, i) => new { s = s, i = i }).FirstOrDefault(si => si.s == id);
-        if (pair != null) 
+        if (pair != null)
         {
             int ind = pair.i;
-            string urlprev = ind <= 0 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind-1]);
-            string urlnext = ind >= doclist.Length - 1 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind+1]);
+            string urlprev = ind <= 0 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind - 1]);
+            string urlnext = ind >= doclist.Length - 1 ? null : Url.Content("~/Home/Portrait?id=" + doclist[ind + 1]);
             <div>
-                @if(urlprev != null) { <a href="@urlprev">пред.</a> }
-                else { <span>пред.</span>} 
+                @if (urlprev != null)
+                { <a href="@urlprev">пред.</a> }
+                else
+                { <span>пред.</span>} 
                 <span> </span>
-                @if(urlnext != null) { <a href="@urlnext">след.</a> }
-                else { <span>след.</span>} 
+                @if (urlnext != null)
+                { <a href="@urlnext">след.</a> }
+                else
+                { <span>след.</span>} 
+                @if (Session["inDocumentId"] != null && Session["inDocumentName"] != null) 
+                {
+                    <span>   Прикрепить ли к документу </span>
+                    <span> <a href="">@Session["inDocumentName"]</a>??? </span>
+                }
             </div>
         }
     }
@@ -163,7 +177,7 @@ else
       else if (irs.Length == 1)
       {
           string type_id = irs[0].Attribute("type").Value;
-      @Html.ActionLink(label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
+      @Html.ActionLink(label, "AddInvRelation", new { bid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
       }
       else
       {
@@ -177,7 +191,7 @@ else
             if (!firsttime)
             { <span> </span> }
             else { firsttime = false; }
-            @Html.ActionLink(ir_label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
+            @Html.ActionLink(ir_label, "AddInvRelation", new { bid = id, prop = ip.Attribute("prop").Value, rtype = type_id })
         }
         )
       </span>
@@ -208,7 +222,7 @@ else
                 if (needblank)
                 { <span> </span> }
                 else { needblank = true; }
-                @Html.ActionLink(label, "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })  
+                @Html.ActionLink(label, "AddInvRelation", new { bid = id, prop = ip.Attribute("prop").Value, rtype = type_id })  
             }
             </div>
         }
@@ -219,8 +233,15 @@ else
             if (edit && (view_att == null || view_att.Value != "largeicons"))
             {
                 string type_id = ir.Attribute("type").Value;
+                string iprop = ip.Attribute("prop").Value;
                 <div>@ir.Element("label").Value
-                    [@Html.ActionLink("нов", "AddInvRelation", new { eid = id, prop = ip.Attribute("prop").Value, rtype = type_id })]
+                    @*[@Html.ActionLink("нов", "AddInvRelation", new { bid = id, prop = iprop, rtype = type_id })]*@
+                    [@Ajax.ActionLink("нов", "EditForm", new { firsttime = true, bid = id, eid = "create888", etype = type_id, iprop = iprop, nc = ir.Element("header").Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+                {
+                    HttpMethod = "Post",
+                    InsertionMode = InsertionMode.InsertAfter,
+                    UpdateTargetId = "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_"
+                })]
                 </div>
             }
             if (view_att != null && view_att.Value == "largeicons")
@@ -251,15 +272,15 @@ else
                             }
                             else
                             {
-                                Dictionary<string,string> icons = new Dictionary<string,string>();
+                                Dictionary<string, string> icons = new Dictionary<string, string>();
                                 icons.Add(sema2012m.ONames.FOG + "document", "document_m.jpg");
                                 icons.Add(sema2012m.ONames.FOG + "photo-doc", "photo_m.jpg");
                                 icons.Add(sema2012m.ONames.FOG + "video-doc", "video_m.jpg");
                                 icons.Add(sema2012m.ONames.FOG + "audio-doc", "audio_m.jpg");
                                 icons.Add(sema2012m.ONames.FOG + "collection", "collection_m.jpg");
-                                
-                                src = Url.Content("~/PublicuemCommon/icons/medium/" + 
-                                    (icons.ContainsKey(rty)? icons[rty] : "default_m.jpg"));
+
+                                src = Url.Content("~/PublicuemCommon/icons/medium/" +
+                                    (icons.ContainsKey(rty) ? icons[rty] : "default_m.jpg"));
                             }
                             parts.AddRange(fr.Elements("c").Select(c => c.Value));
                         }
@@ -271,7 +292,8 @@ else
                 </a>
                 </div>
                 @if (parts.Count() > 0)
-                { int i = 0;
+                {
+                    int i = 0;
                 <div style="font-size:smaller;">
                     @foreach (var part in parts)
                     {

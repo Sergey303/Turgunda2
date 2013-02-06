@@ -309,7 +309,11 @@ namespace Turgunda2.Models
 
         private XElement _format = null;
         public XElement CalculateFormat()
-        { _format = StaticObjects.GetEditFormat(etype, iprop); return _format; }
+        { 
+            _format = StaticObjects.GetEditFormat(etype, iprop);
+            if (_format == null) _format = new XElement("record", new XAttribute("type", etype));
+            return _format; 
+        }
         private XElement _xtree;
         public void SetXTree(XElement xtree) { _xtree = xtree; }
             

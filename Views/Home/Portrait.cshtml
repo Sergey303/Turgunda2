@@ -100,7 +100,7 @@
     }
     if (edit)
     {
-        <td>@Ajax.ActionLink("edit", "EditForm", new { firsttime = true, bid = id, eid = eid, etype = rtype, iprop = iprop, nc = r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
+        <td>@Ajax.ActionLink("ред", "EditForm", new { firsttime = true, bid = id, eid = eid, etype = rtype, iprop = iprop, nc = r.Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
        {
            HttpMethod = "Post",
            InsertionMode = InsertionMode.Replace,
@@ -150,10 +150,21 @@ else
                 { <a href="@urlnext">след.</a> }
                 else
                 { <span>след.</span>} 
-                @if (Session["inDocumentId"] != null && Session["inDocumentName"] != null) 
-                {
-                    <span>   Прикрепить ли к документу </span>
-                    <span> <a href="">@Session["inDocumentName"]</a>??? </span>
+                @{
+                    bool isapart = Model.xresult.Elements("ip")
+                        .Where(ip => ip.Attribute("prop").Value == "http://fogid.net/o/partItem")
+                        .Any(ip => ip.Elements("ir")
+                            .Where(ir => ir.Attribute("type").Value == "http://fogid.net/o/DocumentPart")
+                            .Any(ir => ir.Elements("r").Any()));
+                    string ur = "";
+                    if (Session["inDocumentId"] != null && Session["inDocumentName"] != null && 
+                        !isapart) 
+                    {
+                        <span>   Прикрепить ли к документу </span>
+                        @Html.ActionLink((string)Session["inDocumentName"], "ConnectToDocument",
+                                 new { bid = id, did = (string)Session["inDocumentId"] })  
+                        <span>???</span>
+                    }
                 }
             </div>
         }
@@ -163,7 +174,7 @@ else
     bool hasinverse = Model.xresult.Elements("ip").SelectMany(ip => ip.Elements("ir")).Any(ir => ir.Element("r") != null);
 }
 @HTable(Model.xresult, id, null, Model.xresult.Element("r").Attribute("type").Value, edit, !hasinverse)
-
+@*
 @if (edit)
 {
     var query = Model.xresult.Elements("ip");
@@ -200,17 +211,18 @@ else
   }
 </div>
 }
+*@
 <table>
 @foreach (XElement ip in @Model.xresult.Elements("ip"))
 {
-    //if (!ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
-    var qu = ip.Elements("ir"); //.Where(ir => ir.Elements("r").Count() == 0);
+    if (!edit && !ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
+    var qu = ip.Elements("ir").Where(ir => ir.Elements("r").Count() == 0);
     //.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
     
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
         <td>
-@*        @if (edit && qu.Count() > 0)
+        @if (edit && qu.Count() > 0)
         {
             bool needblank = false;
             <div>
@@ -225,10 +237,10 @@ else
             }
             </div>
         }
-*@
+
         @foreach (XElement ir in ip.Elements("ir"))
         {
-            //if (ir.Elements("r").Count() == 0) { continue; }
+            if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
             if (edit && (view_att == null || view_att.Value != "largeicons"))
             {
@@ -297,7 +309,7 @@ else
                 <div style="font-size:smaller;">
                     @foreach (var part in parts)
                     {
-                        string colo = i % 2 == 0 ? "White" : "Aqua"; i++;
+                        string colo = i % 2 == 0 ? "White" : "Silver"; i++;
                         <span style="background-color:@colo;">@part</span>
                     }
                 </div>

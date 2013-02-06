@@ -115,6 +115,15 @@ namespace Turgunda2.Controllers
             //string nid = StaticObjects.CreateNewItem(searchstring, type, User.Identity.Name);
             return RedirectToAction("Portrait", "Home", new { id = bid });
         }
+        public ActionResult ConnectToDocument(string bid, string did)
+        {
+            XElement docpart = new XElement(XName.Get("DocumentPart", sema2012m.ONames.FOG),
+                new XElement(XName.Get("partItem", sema2012m.ONames.FOG), new XAttribute(sema2012m.ONames.rdfresource, bid)),
+                new XElement(XName.Get("inDocument", sema2012m.ONames.FOG), new XAttribute(sema2012m.ONames.rdfresource, did)));
+            StaticObjects.PutItemToDb(docpart, true, User.Identity.Name);
+            return RedirectToAction("Portrait", "Home", new { id = bid });
+        }
+
         /// <summary>
         /// EditForm вычисляет (строит, корректирует) модель записи и направляет ее на View построения фрагмента редактирования.
         /// Возможно несколько случаев запуска EditForm: 1) начальное построение объекта класса RecordModel, который представляет 

@@ -90,6 +90,19 @@
 					</direct>
 				</record>
 			</inverse>
+			<inverse prop="http://fogid.net/o/something">
+				<record type="http://fogid.net/o/location">
+					<field prop="http://fogid.net/o/location-category"/>
+					<direct prop="http://fogid.net/o/location-place">
+						<record type="http://fogid.net/o/city">
+							<field prop="http://fogid.net/o/name"/>
+						</record>
+						<record type="http://fogid.net/o/country">
+							<field prop="http://fogid.net/o/name"/>
+						</record>
+					</direct>
+				</record>
+			</inverse>
 			<inverse prop="http://fogid.net/o/reflected">
 				<record type="http://fogid.net/o/reflection" view="largeicons" fid="reflected/reflection">
 					<direct prop="http://fogid.net/o/in-doc">
@@ -137,6 +150,19 @@
 					<field prop="http://fogid.net/o/to-date"/>
 					<direct prop="http://fogid.net/o/participant">
 						<record type="http://fogid.net/o/person">
+							<field prop="http://fogid.net/o/name"/>
+						</record>
+					</direct>
+				</record>
+			</inverse>
+			<inverse prop="http://fogid.net/o/something">
+				<record type="http://fogid.net/o/location">
+					<field prop="http://fogid.net/o/location-category"/>
+					<direct prop="http://fogid.net/o/location-place">
+						<record type="http://fogid.net/o/city">
+							<field prop="http://fogid.net/o/name"/>
+						</record>
+						<record type="http://fogid.net/o/country">
 							<field prop="http://fogid.net/o/name"/>
 						</record>
 					</direct>
@@ -608,62 +634,11 @@
 				</record>
 			</inverse>
 		</record>
-		<record type="http://fogid.net/o/document">
+		<record type="http://fogid.net/o/country">
 			<field prop="http://fogid.net/o/name"/>
-			<field prop="http://fogid.net/o/description"/>
-			<field prop="http://fogid.net/o/from-date"/>
-			<inverse prop="http://fogid.net/o/partItem">
-				<record type="http://fogid.net/o/DocumentPart">
-					<field prop="http://fogid.net/o/pageNumbers"/>
-					<direct prop="http://fogid.net/o/inDocument">
-						<record type="http://fogid.net/o/document">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-					</direct>
-				</record>
-			</inverse>
-			<inverse prop="http://fogid.net/o/inDocument">
-				<record type="http://fogid.net/o/DocumentPart" sortfield="pageNumbers">
-                    <field prop="http://fogid.net/o/pageNumbers"/>
-					<direct prop="http://fogid.net/o/partItem">
-						<record type="http://fogid.net/o/document">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-						<record type="http://fogid.net/o/photo-doc">
-							<field prop="http://fogid.net/o/name"/>
-							<inverse prop="http://fogid.net/o/forDocument" attname="uri">
-								<record type="http://fogid.net/o/FileStore">
-									<field prop="http://fogid.net/o/uri"/>
-								</record>
-							</inverse>
-						</record>
-						<record type="http://fogid.net/o/video-doc">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-						<record type="http://fogid.net/o/document">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-					</direct>
-				</record>
-			</inverse>
-			<inverse prop="http://fogid.net/o/adoc">
-				<record type="http://fogid.net/o/authority">
-					<direct prop="http://fogid.net/o/author">
-						<record type="http://fogid.net/o/person">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-					</direct>
-				</record>
-			</inverse>
-			<inverse prop="http://fogid.net/o/collection-item">
-				<record type="http://fogid.net/o/collection-member">
-					<direct prop="http://fogid.net/o/in-collection">
-						<record type="http://fogid.net/o/collection">
-							<field prop="http://fogid.net/o/name"/>
-						</record>
-					</direct>
-				</record>
-			</inverse>
+		</record>
+		<record type="http://fogid.net/o/city">
+			<field prop="http://fogid.net/o/name"/>
 		</record>
 	</formats>
 
@@ -697,7 +672,14 @@
       <field prop="http://fogid.net/o/description" />
       <field prop="http://fogid.net/o/comment"/>
     </record>
-    <record type="http://fogid.net/o/document">
+	  <record type="http://fogid.net/o/country" fid="city">
+		  <field prop="http://fogid.net/o/name"/>
+		  <field prop="http://fogid.net/o/from-date"/>
+		  <field prop="http://fogid.net/o/to-date"/>
+		  <field prop="http://fogid.net/o/description" />
+		  <field prop="http://fogid.net/o/comment"/>
+	  </record>
+	  <record type="http://fogid.net/o/document">
       <field prop="http://fogid.net/o/name"/>
       <field prop="http://fogid.net/o/description"/>
       <field prop="http://fogid.net/o/from-date"/>
@@ -840,7 +822,28 @@
         </record>
       </direct>
     </record>
-    <record type="http://fogid.net/o/org-relatives">
+
+	  <record type="http://fogid.net/o/location">
+		  <field prop="http://fogid.net/o/location-category"/>
+		  <direct prop="http://fogid.net/o/location-place">
+			  <record type="http://fogid.net/o/city">
+				  <field prop="http://fogid.net/o/name"/>
+			  </record>
+			  <record type="http://fogid.net/o/country">
+				  <field prop="http://fogid.net/o/name"/>
+			  </record>
+		  </direct>
+		  <direct prop="http://fogid.net/o/something">
+			  <record type="http://fogid.net/o/person">
+				  <field prop="http://fogid.net/o/name"/>
+			  </record>
+			  <record type="http://fogid.net/o/org-sys">
+				  <field prop="http://fogid.net/o/name"/>
+			  </record>
+		  </direct>
+	  </record>
+
+	  <record type="http://fogid.net/o/org-relatives">
       <direct prop="http://fogid.net/o/org-parent">
         <record type="http://fogid.net/o/org-sys">
           <field prop="http://fogid.net/o/name"/>

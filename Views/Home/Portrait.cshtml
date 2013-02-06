@@ -9,7 +9,7 @@
 
 @helper HTable(XElement container, string id, string iprop, string ttype, bool edit, bool candelete)
     {
-        string bodyid = iprop == null ? "_headerid_" : "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_";
+        string bodyid = iprop == null ? "_headerid_" : "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_" + ttype.Substring(iprop.LastIndexOf('/') + 1);
         XElement[] headerelements = container.Element("header").Elements().ToArray();
 <table>
     <thead>
@@ -203,17 +203,16 @@ else
 <table>
 @foreach (XElement ip in @Model.xresult.Elements("ip"))
 {
-    if (!ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
-    var qu = ip.Elements("ir").Where(ir => ir.Elements("r").Count() == 0);
+    //if (!ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
+    var qu = ip.Elements("ir"); //.Where(ir => ir.Elements("r").Count() == 0);
     //.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
     
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
         <td>
-        @if (edit && qu.Count() > 0)
+@*        @if (edit && qu.Count() > 0)
         {
             bool needblank = false;
-            //var qu1 = qu.Select(irr => irr.Element("label").Value).Aggregate((sum, s) => sum + " " + s);
             <div>
             @foreach (XElement irr in qu)
             {
@@ -226,9 +225,10 @@ else
             }
             </div>
         }
+*@
         @foreach (XElement ir in ip.Elements("ir"))
         {
-            if (ir.Elements("r").Count() == 0) { continue; }
+            //if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
             if (edit && (view_att == null || view_att.Value != "largeicons"))
             {
@@ -240,7 +240,7 @@ else
                 {
                     HttpMethod = "Post",
                     InsertionMode = InsertionMode.InsertAfter,
-                    UpdateTargetId = "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_"
+                    UpdateTargetId = "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_" + type_id.Substring(iprop.LastIndexOf('/') + 1)
                 })]
                 </div>
             }

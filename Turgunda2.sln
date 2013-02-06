@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Web Developer Express 2010
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Turgunda2", "Turgunda2.csproj", "{E414C699-FE18-4D92-9708-1FC550D439BD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sema2012m", "..\sema2012m\sema2012m.csproj", "{01975281-0445-4C25-9E68-2518BE52D855}"

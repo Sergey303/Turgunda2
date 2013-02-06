@@ -7,8 +7,8 @@
 			<field prop="http://fogid.net/o/from-date"/>
 			<field prop="http://fogid.net/o/to-date"/>
 			<field prop="http://fogid.net/o/sex" type="http://fogid.net/o/person-sex"/>
-			<!--
-			<direct prop="http://fogid.net/o/father">
+      <!--
+      <direct prop="http://fogid.net/o/father">
 				<record type="http://fogid.net/o/person">
 					<field prop="http://fogid.net/o/name"/>
 				</record>
@@ -40,7 +40,7 @@
 					<field prop="http://fogid.net/o/to-date"/>
 				</record>
 			</inverse>
-			-->
+      -->
 			<inverse prop="http://fogid.net/o/referred-sys">
 				<record type="http://fogid.net/o/naming" fid="naming">
 					<field prop="http://fogid.net/o/alias"/>

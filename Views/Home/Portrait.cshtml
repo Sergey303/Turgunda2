@@ -129,9 +129,9 @@
 }
 else
 {
-    string[] doclist = Model.doclist;
     string url = Url.Content("~/Docs/GetPhoto?s=medium&u=" + Model.uri);
     <img src="@url" />
+    string[] doclist = (string[])Session["doclist"];
     if (doclist != null)
     {
         var pair = doclist.Select((s, i) => new { s = s, i = i }).FirstOrDefault(si => si.s == id);
@@ -213,7 +213,7 @@ else
 }
 *@
 <table>
-@foreach (XElement ip in @Model.xresult.Elements("ip"))
+@foreach (XElement ip in Model.xresult.Elements("ip"))
 {
     if (!edit && !ip.Elements("ir").Any((XElement ir) => ir.Element("r") != null)) { continue; }
     var qu = ip.Elements("ir").Where(ir => ir.Elements("r").Count() == 0);
@@ -258,7 +258,11 @@ else
             }
             if (view_att != null && view_att.Value == "largeicons")
             {
-                foreach (XElement r in ir.Elements("r").OrderBy(rr => rr.Value))
+                var elementset = ir.Elements("r").OrderBy(rr => rr.Value);
+                string[] doclist = elementset.Where(rr=>rr.Element("r") != null && rr.Element("r").Attribute("id") != null)
+                    .Select(rr => rr.Element("r").Attribute("id").Value).ToArray();
+                Session["doclist"] = doclist;
+                foreach (XElement r in elementset)
                 {
                     string url = "";
                     string src = "";

@@ -730,6 +730,7 @@ namespace Turgunda2.Models
             this.searchstring = searchstring;
             //type = "http://fogid.net/o/person"; // для отладки
             this.type = type;
+            if (string.IsNullOrEmpty(searchstring)) { _results = new SearchResult[0]; return; }
             var query = StaticObjects.SearchByName(searchstring)
                 .Select(xres =>
                 {

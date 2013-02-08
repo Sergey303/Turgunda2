@@ -14,19 +14,20 @@ namespace Turgunda2.Controllers
             if (User.IsInRole("user")) 
             {
                 string name = Request.Params["name"];
-                if (name != null)
+                if (name == null)
+                { // обычный вход зарегистрированного пользователя
+                    name = "Фонды";
+                }
+                var recs = StaticObjects.SearchByName(name).Where(r =>
                 {
-                    var recs = StaticObjects.SearchByName(name).Where(r =>
-                    {
-                        var na = r.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name && f.Value == name);
-                        if (na == null) return false;
-                        return true;
-                    }).ToArray();
-                    if (recs.Count() == 1)
-                    {
-                        string id = recs[0].Attribute("id").Value;
-                        return RedirectToAction("Portrait", new { id = id });
-                    }
+                    var na = r.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name && f.Value == name);
+                    if (na == null) return false;
+                    return true;
+                }).ToArray();
+                if (recs.Count() == 1)
+                {
+                    string id = recs[0].Attribute("id").Value;
+                    return RedirectToAction("Portrait", new { id = id });
                 }
             }
             return View();

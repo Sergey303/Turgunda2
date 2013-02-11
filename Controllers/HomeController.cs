@@ -14,9 +14,11 @@ namespace Turgunda2.Controllers
             if (User.IsInRole("user")) 
             {
                 string name = Request.Params["name"];
+                string label = "Моё";
                 if (name == null)
                 { // обычный вход зарегистрированного пользователя
                     name = "Фонды";
+                    label = name;
                 }
                 var recs = StaticObjects.SearchByName(name).Where(r =>
                 {
@@ -27,7 +29,35 @@ namespace Turgunda2.Controllers
                 if (recs.Count() == 1)
                 {
                     string id = recs[0].Attribute("id").Value;
-                    return RedirectToAction("Portrait", new { id = id });
+                    XElement rec_format = new XElement("record");
+                    XElement xtree = StaticObjects.GetItemById(id, rec_format);
+                    if (xtree != null && xtree.Attribute("type") != null)
+                    {
+                        string type_id = xtree.Attribute("type").Value;
+                        if (type_id == sema2012m.ONames.FOG + "collection") 
+                        {
+                            rec_format = new XElement("record", new XAttribute("type", type_id),
+                                new XElement("inverse", new XAttribute("prop", sema2012m.ONames.p_incollection),
+                                    new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection-member"),
+                                        new XElement("direct", new XAttribute("prop", sema2012m.ONames.p_collectionitem),
+                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection"),
+                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "document"),
+                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "photo-doc"),
+                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "video-doc"),
+                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "audio-doc"),
+                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                            null
+                                        )))
+                                    );
+                            Models.PortraitModel pm = new Models.PortraitModel(id, rec_format);
+                            ViewData["label"] = label;
+                            return View("Composition", pm);
+                        }
+                    }
                 }
             }
             return View();
@@ -36,22 +66,6 @@ namespace Turgunda2.Controllers
         public ActionResult Portrait(string id)
         {
             Models.PortraitModel pmodel = new Models.PortraitModel(id);
-            // Фиксирование коллекции в сессии
-            //if (pmodel.type_id == sema2012m.ONames.FOG + "collection")
-            //{
-            //    pmodel.doclist = null;
-            //    var qu = pmodel.xtree.Elements("inverse").Where(inv => inv.Attribute("prop").Value == sema2012m.ONames.p_incollection)
-            //        .Select(inv => inv.Element("record"))
-            //        .Select(re => re.Elements("direct").FirstOrDefault(di => di.Attribute("prop").Value == sema2012m.ONames.p_collectionitem))
-            //        .Where(di => di != null)
-            //        .Select(di => di.Element("record").Attribute("id").Value).ToArray();
-            //    Session["doclist"] = qu;
-            //}
-            //else
-            //{
-            //    pmodel.doclist = (string[])Session["doclist"];
-            //}
-
             return View(pmodel);
         }
         public ActionResult Search(string searchstring, string type) 

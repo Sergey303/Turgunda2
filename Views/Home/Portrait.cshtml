@@ -242,18 +242,22 @@ else
         {
             if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
-            if (edit && (view_att == null || view_att.Value != "largeicons"))
+            if (view_att == null || view_att.Value != "largeicons")
             {
                 string type_id = ir.Attribute("type").Value;
                 string iprop = ip.Attribute("prop").Value;
                 <div>@ir.Element("label").Value
-                    @*[@Html.ActionLink("нов", "AddInvRelation", new { bid = id, prop = iprop, rtype = type_id })]*@
+                    @if (edit) {
+                    <span>
                     [@Ajax.ActionLink("нов", "EditForm", new { firsttime = true, bid = id, eid = "create888", etype = type_id, iprop = iprop, nc = ir.Element("header").Elements().Count(), d = System.DateTime.Now.Ticks }, new AjaxOptions()
-                {
-                    HttpMethod = "Post",
-                    InsertionMode = InsertionMode.InsertAfter,
-                    UpdateTargetId = "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + "_" + type_id.Substring(iprop.LastIndexOf('/') + 1)
-                })]
+                        {
+                            HttpMethod = "Post",
+                            InsertionMode = InsertionMode.InsertAfter,
+                            UpdateTargetId = "_" + iprop.Substring(iprop.LastIndexOf('/') + 1) + 
+                                "_" + type_id.Substring(iprop.LastIndexOf('/') + 1)
+                        })]
+                    </span>
+                    }
                 </div>
             }
             if (view_att != null && view_att.Value == "largeicons")

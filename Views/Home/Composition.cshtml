@@ -1,0 +1,26 @@
+﻿@using System.Xml.Linq
+
+@model Turgunda2.Models.PortraitModel
+
+@{
+    string title = "";
+    if (ViewData["label"] != null) { title = (string)ViewData["label"]; }
+    IEnumerable<XElement> recs = Model.xresult.Element("ip").Element("ir").Elements("r")
+        .Select(r => r.Element("r"))
+        .Where(r => r != null);
+    XElement look = null;
+}
+
+<h2>@title</h2>
+
+@foreach (XElement rec in recs.Where(r => r.Attribute("id") != null))
+{
+    <div>
+    @Html.ActionLink(rec.Value, "Portrait", new { id = rec.Attribute("id").Value })
+    </div>
+}
+
+@if (look != null)
+{
+    <pre>@look.ToString()</pre>
+}

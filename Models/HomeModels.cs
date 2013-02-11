@@ -91,13 +91,16 @@ namespace Turgunda2.Models
         public XElement look;
         public string message;
         public XElement xtree;
+        public PortraitModel(string id) : this(id, null) { }
         // По идентификатору мы получаем 1) откорректированный идентификатор; 2) тип записи; 3) формат (раскрытия) записи
         // Эту информацию дополняем меткой типа, пытаемся прочитать и зафиксировать имя записи и uri документного контента
-        public PortraitModel(string id)
+        public PortraitModel(string id, XElement rec_format)
         {
             DateTime tt0 = DateTime.Now;
-            XElement rec_format;
-            this.type_id = GetFormat(id, out rec_format);
+            //XElement rec_format;
+            if (rec_format == null) this.type_id = GetFormat(id, out rec_format);
+            else this.type_id = rec_format.Attribute("type").Value;
+
             this.typelabel = Common.OntNames.Where(pair => pair.Key == type_id).Select(pair => pair.Value).FirstOrDefault();
             if (this.typelabel == null) this.typelabel = type_id;
             // Получим портретное х-дерево

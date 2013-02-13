@@ -221,7 +221,8 @@ namespace Turgunda2
         public static string CreateNewItem(string name, string type, string username)
         {
             if (type == null || string.IsNullOrEmpty(name)) return null;
-            XElement xrecord = PutItemToDb(new XElement(sema2012m.ONames.GetXName(type), new XElement(sema2012m.ONames.tag_name, name)),
+            XElement xrecord = PutItemToDb(new XElement(sema2012m.ONames.GetXName(type), 
+                new XElement(sema2012m.ONames.tag_name, new XAttribute(sema2012m.ONames.xmllang, "ru"), name)),
                 true, username); 
 
             return xrecord.Attribute(sema2012m.ONames.rdfabout).Value;

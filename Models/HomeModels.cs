@@ -76,6 +76,17 @@ namespace Turgunda2.Models
                 .Where(st => st.Attribute(ONames.xmllang).Value == "ru");
             return et_states;
         }
+        public static bool IsTextField(string property_id)
+        {
+            XElement def_el = _ontology.Elements("DatatypeProperty").FirstOrDefault(p => p.Attribute(ONames.rdfabout).Value == property_id);
+            if (def_el != null)
+            {
+                bool istext = def_el.Elements("range")
+                    .Any(range => range.Attribute(ONames.rdfresource).Value == "http://fogid.net/o/text");
+                return istext;
+            }
+            return false;
+        }
 
     }
     public class PortraitModel
@@ -297,6 +308,7 @@ namespace Turgunda2.Models
     {
         public RecordModel() { }
 
+        public string lang = "ru"; // В дальнейшем, надо будет превратить спецификатор в свойство и переключаться по нему
         public string command { get; set; }
         public string exchange { get; set; }
         private bool _firsttime = false;

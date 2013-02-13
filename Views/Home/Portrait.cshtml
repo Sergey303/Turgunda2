@@ -270,6 +270,7 @@ else
                 {
                     string url = "";
                     string src = "";
+                    string src_ext = "";
                     List<string> parts = new List<string>();
                     foreach (var fr in r.Elements())
                     {
@@ -289,6 +290,7 @@ else
                             if (uri_att != null)
                             {
                                 src = Url.Content("~/Docs/GetPhoto?s=small&u=" + uri_att.Value);
+                                src_ext = Url.Content("~/Docs/GetPhoto?s=normal&u=" + uri_att.Value);
                             }
                             else
                             {
@@ -311,6 +313,12 @@ else
                     <img src="@src" />
                 </a>
                 </div>
+                @if (edit && !string.IsNullOrEmpty(src_ext))
+                {
+                <div>
+                    <a href="@src_ext" target="_external">ю</a>
+                </div>
+                }
                 @if (parts.Count() > 0)
                 {
                     int i = 0;

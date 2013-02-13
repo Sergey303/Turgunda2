@@ -218,7 +218,12 @@ namespace Turgunda2.Controllers
                             {
                                 string value = rmodel.GetFValue(ind);
                                 if (!string.IsNullOrEmpty(value))
-                                    return new XElement(xprop, rmodel.GetFValue(ind)); // Надо определить еще нужен ли язык и какой
+                                {
+                                    // Надо определить еще нужен ли язык и какой
+                                    bool istext = Turgunda2.Models.Common.IsTextField(fd.Attribute("prop").Value);
+                                    return new XElement(xprop, rmodel.GetFValue(ind),
+                                        istext ? new XAttribute(sema2012m.ONames.xmllang, rmodel.lang) : null);
+                                }
                             }
                             else if (fd.Name == "d")
                             {

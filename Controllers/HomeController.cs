@@ -11,55 +11,60 @@ namespace Turgunda2.Controllers
     {
         public ActionResult Index()
         {
-            if (User.IsInRole("user")) 
+            try
             {
-                string name = Request.Params["name"];
-                string label = "Моё";
-                if (name == null)
-                { // обычный вход зарегистрированного пользователя
-                    name = "Фонды";
-                    label = name;
-                }
-                var recs = StaticObjects.SearchByName(name).Where(r =>
+                if (User.IsInRole("user"))
                 {
-                    var na = r.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name && f.Value == name);
-                    if (na == null) return false;
-                    return true;
-                }).ToArray();
-                if (recs.Count() == 1)
-                {
-                    string id = recs[0].Attribute("id").Value;
-                    XElement rec_format = new XElement("record");
-                    XElement xtree = StaticObjects.GetItemById(id, rec_format);
-                    if (xtree != null && xtree.Attribute("type") != null)
+                    string name = Request.Params["name"];
+                    string label = "Моё";
+                    if (name == null)
+                    { // обычный вход зарегистрированного пользователя
+                        name = "Фонды";
+                        label = name;
+                    }
+                    var recs = StaticObjects.SearchByName(name).Where(r =>
                     {
-                        string type_id = xtree.Attribute("type").Value;
-                        if (type_id == sema2012m.ONames.FOG + "collection") 
+                        var na = r.Elements("field").FirstOrDefault(f => f.Attribute("prop").Value == sema2012m.ONames.p_name && f.Value == name);
+                        if (na == null) return false;
+                        return true;
+                    }).ToArray();
+                    if (recs.Count() == 1)
+                    {
+                        string id = recs[0].Attribute("id").Value;
+                        XElement rec_format = new XElement("record");
+                        XElement xtree = StaticObjects.GetItemById(id, rec_format);
+                        if (xtree != null && xtree.Attribute("type") != null)
                         {
-                            rec_format = new XElement("record", new XAttribute("type", type_id),
-                                new XElement("inverse", new XAttribute("prop", sema2012m.ONames.p_incollection),
-                                    new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection-member"),
-                                        new XElement("direct", new XAttribute("prop", sema2012m.ONames.p_collectionitem),
-                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection"),
-                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
-                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "document"),
-                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
-                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "photo-doc"),
-                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
-                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "video-doc"),
-                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
-                                            new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "audio-doc"),
-                                                new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
-                                            null
-                                        )))
-                                    );
-                            Models.PortraitModel pm = new Models.PortraitModel(id, rec_format);
-                            ViewData["label"] = label;
-                            return View("Composition", pm);
+                            string type_id = xtree.Attribute("type").Value;
+                            if (type_id == sema2012m.ONames.FOG + "collection")
+                            {
+                                rec_format = new XElement("record", new XAttribute("type", type_id),
+                                    new XElement("inverse", new XAttribute("prop", sema2012m.ONames.p_incollection),
+                                        new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection-member"),
+                                            new XElement("direct", new XAttribute("prop", sema2012m.ONames.p_collectionitem),
+                                                new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "collection"),
+                                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                                new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "document"),
+                                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                                new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "photo-doc"),
+                                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                                new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "video-doc"),
+                                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                                new XElement("record", new XAttribute("type", sema2012m.ONames.FOG + "audio-doc"),
+                                                    new XElement("field", new XAttribute("prop", sema2012m.ONames.p_name))),
+                                                null
+                                            )))
+                                        );
+                                Models.PortraitModel pm = new Models.PortraitModel(id, rec_format);
+                                ViewData["label"] = label;
+                                return View("Composition", pm);
+                            }
                         }
                     }
                 }
             }
+            catch (Exception) { }
+
             return View();
         }
 

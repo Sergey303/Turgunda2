@@ -26,10 +26,10 @@ namespace Turgunda2
             char c = path[path.Length-1];
             _path = path + (c=='/' || c=='\\' ? "" : "/");
             // Инициирование системного лога проекта Тургунда
-            InitLog(turlog, _path + "logs/turlog.txt", true);
+            InitLog(out turlog, _path + "logs/turlog.txt", true);
             turlog("Turgunda initiating... path=" + path);
-            InitLog(changelog, _path + "logs/changelog.txt", false);
-            InitLog(convertlog, _path + "logs/convertlog.txt", false);
+            InitLog(out changelog, _path + "logs/changelog.txt", false);
+            InitLog(out convertlog, _path + "logs/convertlog.txt", false);
 
             // Чтение конфигуратора
             XElement xconfig = XElement.Load(path + "config.xml");
@@ -253,7 +253,7 @@ namespace Turgunda2
         private static sema2012m.LogLine turlog = s => { };
         private static sema2012m.LogLine changelog = s => { };
         private static sema2012m.LogLine convertlog = s => { };
-        private static void InitLog(sema2012m.LogLine log, string path, bool timestamp)
+        private static void InitLog(out sema2012m.LogLine log, string path, bool timestamp)
         {
             log = (string line) =>
             {

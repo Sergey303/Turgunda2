@@ -26,8 +26,10 @@ namespace Turgunda2
             char c = path[path.Length-1];
             _path = path + (c=='/' || c=='\\' ? "" : "/");
             // Инициирование системного лога проекта Тургунда
-            InitTurlog(path);
+            InitLog(turlog, _path + "logs/turlog.txt", true);
             turlog("Turgunda initiating... path=" + path);
+            InitLog(changelog, _path + "logs/changelog.txt", false);
+            InitLog(convertlog, _path + "logs/convertlog.txt", false);
 
             // Чтение конфигуратора
             XElement xconfig = XElement.Load(path + "config.xml");
@@ -117,7 +119,7 @@ namespace Turgunda2
         public static void LoadFromCassettesExpress()
         {
             var fogfilearr = CassetteKernel.CassettesConnection.GetFogFiles().Select(d => d.filePath).ToArray();
-            engine.LoadFromCassettesExpress(fogfilearr, turlog, turlog);
+            engine.LoadFromCassettesExpress(fogfilearr, turlog, convertlog);
             // Загрузка дополнительных элементов, в частности - корневой коллекции
             engine.ReceiveXCommand(
                 new XElement(XName.Get("collection", sema2012m.ONames.FOG),
@@ -210,10 +212,10 @@ namespace Turgunda2
             docinfo.Save();
             // Тут еще в лог изменений надо записать
             // Добавить служебные поля и сохранить в логе
-            //xrecord.Add(new XAttribute("dbid", docinfo.dbId));
-            //xrecord.Add(new XAttribute("sender", docinfo.owner));
+            item_corrected.Add(new XAttribute("dbid", docinfo.dbId));
+            item_corrected.Add(new XAttribute("sender", docinfo.owner));
             // Запомнить действие в логе изменений и синхронизовать(!)
-            //changelog(xrecord.ToString()); // ========== СДЕЛАТЬ!
+            changelog(item_corrected.ToString()); // ========== СДЕЛАТЬ!
             return item_corrected;
         }
 
@@ -249,16 +251,18 @@ namespace Turgunda2
         // ====== Вспомогательные процедуры Log - area
         private static object locker = new object();
         private static sema2012m.LogLine turlog = s => { };
-        private static void InitTurlog(string path)
+        private static sema2012m.LogLine changelog = s => { };
+        private static sema2012m.LogLine convertlog = s => { };
+        private static void InitLog(sema2012m.LogLine log, string path, bool timestamp)
         {
-            turlog = (string line) =>
+            log = (string line) =>
             {
                 lock (locker)
                 {
                     try
                     {
-                        var saver = new System.IO.StreamWriter(path + "logs/turlog.txt", true, System.Text.Encoding.UTF8);
-                        saver.WriteLine(DateTime.Now.ToString("s") + " " + line);
+                        var saver = new System.IO.StreamWriter(path, true, System.Text.Encoding.UTF8);
+                        saver.WriteLine((timestamp? (DateTime.Now.ToString("s") + " ") : "")+ line);
                         saver.Close();
                     }
                     catch (Exception)

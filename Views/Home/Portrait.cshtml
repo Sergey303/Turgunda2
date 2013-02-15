@@ -222,6 +222,7 @@ else
     <tr valign="top">
         <td>@ip.Element("label").Value</td>
         <td>
+        @*
         @if (edit && qu.Count() > 0)
         {
             bool needblank = false;
@@ -237,10 +238,11 @@ else
             }
             </div>
         }
+        *@
 
         @foreach (XElement ir in ip.Elements("ir"))
         {
-            if (ir.Elements("r").Count() == 0) { continue; }
+            //if (ir.Elements("r").Count() == 0) { continue; }
             XAttribute view_att = ir.Attribute("view");
             if (view_att == null || view_att.Value != "largeicons")
             {

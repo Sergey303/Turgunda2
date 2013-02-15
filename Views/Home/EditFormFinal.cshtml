@@ -55,5 +55,12 @@
             InsertionMode = InsertionMode.Replace,
             UpdateTargetId = Model.eid
         })
+        @Ajax.ActionLink("x", "DeleteRow", new { eid = Model.eid, d = DateTime.Now.Ticks }, new AjaxOptions()
+           {
+               HttpMethod = "Get",
+               InsertionMode = InsertionMode.Replace,
+               UpdateTargetId = Model.eid,
+               Confirm = "Уничтожить?"
+           }) 
     </td>
 }
